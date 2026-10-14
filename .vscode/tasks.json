@@ -1,0 +1,168 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Preparar ML",
+      "type": "process",
+      "command": "uv",
+      "args": [
+        "sync",
+        "--locked"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/ml",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preparar backend",
+      "type": "process",
+      "command": "uv",
+      "args": [
+        "sync",
+        "--locked"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preparar frontend",
+      "type": "process",
+      "command": "npm",
+      "args": [
+        "ci"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": [],
+      "windows": {
+        "command": "npm.cmd"
+      }
+    },
+    {
+      "label": "Preparar todos os ambientes",
+      "dependsOn": [
+        "Preparar ML",
+        "Preparar backend",
+        "Preparar frontend"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Registrar kernel Diabetes ML",
+      "type": "process",
+      "command": "uv",
+      "args": [
+        "run",
+        "--locked",
+        "python",
+        "-m",
+        "ipykernel",
+        "install",
+        "--user",
+        "--name",
+        "diabetes-ml",
+        "--display-name",
+        "Diabetes — ML"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/ml",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Iniciar backend",
+      "type": "process",
+      "command": "uv",
+      "args": [
+        "run",
+        "--locked",
+        "uvicorn",
+        "app.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Iniciar frontend",
+      "type": "process",
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": [],
+      "windows": {
+        "command": "npm.cmd"
+      },
+      "presentation": {
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Iniciar aplicação (backend + frontend)",
+      "dependsOn": [
+        "Iniciar backend",
+        "Iniciar frontend"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Abrir Jupyter",
+      "type": "process",
+      "command": "uv",
+      "args": [
+        "run",
+        "--locked",
+        "jupyter",
+        "lab"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/ml",
+        "env": {
+          "UV_PROJECT_ENVIRONMENT": ".venv"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

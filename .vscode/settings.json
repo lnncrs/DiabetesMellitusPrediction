@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/ml/.venv",
+  "python-envs.workspaceSearchPaths": [
+    "./ml/.venv",
+    "./backend/.venv"
+  ],
+  "python.terminal.activateEnvironment": false,
+  "python-envs.terminal.autoActivationType": "off"
+}
