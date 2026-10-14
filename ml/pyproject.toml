@@ -1,0 +1,20 @@
+[project]
+name = "diabetes-mellitus-ml"
+version = "0.1.0"
+description = "Notebooks didáticos de preparação e modelagem para predição de diabetes."
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "ipykernel",
+    "jupyterlab",
+    "matplotlib",
+    "mlflow",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "requests",
+    "scikit-learn",
+    "seaborn",
+]
+
+[tool.uv]
+package = false

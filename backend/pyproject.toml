@@ -1,0 +1,15 @@
+[project]
+name = "diabetes-mellitus-backend"
+version = "0.1.0"
+description = "API acadêmica de predição de diabetes e explicabilidade."
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "fastapi",
+    "mlflow",
+    "pandas",
+    "scikit-learn",
+    "uvicorn[standard]",
+]
+
+[tool.uv]
+package = false
