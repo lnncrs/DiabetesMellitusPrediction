@@ -5,11 +5,31 @@ description = "API acadêmica de predição de diabetes e explicabilidade."
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi",
-    "mlflow",
-    "pandas",
-    "scikit-learn",
+    "pydantic-settings",
+    "python-json-logger",
     "uvicorn[standard]",
 ]
 
-[tool.uv]
-package = false
+[build-system]
+requires = ["uv_build>=0.11.7,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "app"
+
+[dependency-groups]
+dev = ["httpx", "pytest", "ruff", "pyright"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
