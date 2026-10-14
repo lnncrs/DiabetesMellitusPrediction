@@ -14,7 +14,7 @@ lenin.cristi@aluno.ufabc.edu.br
 
 Projeto didático para explorar a explicabilidade de modelos de aprendizado de máquina e a usabilidade de uma interface em português através da predição de diabetes. A proposta integra notebooks de preparação e treinamento, registro de modelos em MLflow, uma API em FastAPI e uma interface em Vite + React.
 
-O projeto está em sua estrutura inicial. Os notebooks, o treinamento, a API e a interface serão desenvolvidos nas próximas etapas. Os resultados terão finalidade educacional e não constituirão diagnóstico médico.
+O projeto já possui notebooks de preparação e uma aplicação inicial: a página em React consulta a saúde da API FastAPI. O treinamento, a predição e a explicabilidade serão desenvolvidos nas próximas etapas. Os resultados terão finalidade educacional e não constituirão diagnóstico médico.
 
 ## Estrutura do projeto
 
@@ -25,11 +25,11 @@ O projeto está em sua estrutura inicial. Os notebooks, o treinamento, a API e a
 │   ├── notebooks/              # Preparação, treinamento e explicabilidade
 │   └── pyproject.toml          # Ambiente Python de experimentação
 ├── backend/
-│   ├── src/app/                # Futura aplicação FastAPI
+│   ├── src/app/                # Aplicação FastAPI e endpoints de saúde
 │   ├── tests/                  # Testes da API
 │   └── pyproject.toml          # Ambiente Python da API
 ├── frontend/
-│   └── src/                    # Futura aplicação React/Vite com TypeScript
+│   └── src/                    # Página React/Vite com status da API
 ├── data/
 │   ├── uci-diabetes/           # Dados originais e Parquet do dataset UCI
 │   └── azure-diabetes/         # Dados originais e Parquet do dataset Azure Diabetes
@@ -37,6 +37,7 @@ O projeto está em sua estrutura inicial. Os notebooks, o treinamento, a API e a
 │   ├── mlflow/                 # Banco SQLite e artefatos do MLflow local
 │   └── models/                 # Exportações opcionais de modelos
 ├── docs/                       # Documentação do projeto
+├── .vscode/                    # Configurações e tarefas para o grupo
 ├── .gitignore                  # Inicialmente vazio
 └── LICENSE                     # Licença MIT
 ```
@@ -45,7 +46,19 @@ As pastas `data/` e `outputs/` são ignoradas pelo Git e serão criadas pelos no
 
 ## Ambiente local
 
-A versão alvo é Python 3.14, com dois ambientes virtuais independentes gerenciados pelo `uv`. A compatibilidade e as versões das dependências ainda serão validadas; os lockfiles serão gerados nessa etapa. PyTorch será incorporado quando o experimento com rede neural for definido.
+Instale Python 3.14 (ou permita que o `uv` o instale), `uv` e Node.js 24 LTS com NPM. Há dois ambientes virtuais independentes, `ml/.venv` e `backend/.venv`, e dependências NPM em `frontend/node_modules`. As versões Python estão registradas nos respectivos `uv.lock`; o frontend usa `package-lock.json`. PyTorch será incorporado quando o experimento com rede neural for definido.
+
+### Operação pelo VS Code
+
+Abra a raiz deste repositório e instale as extensões recomendadas. Use **Ctrl+Shift+P → Tasks: Run Task** (Tarefas: Executar Tarefa):
+
+1. **Preparar todos os ambientes** instala as dependências das três áreas.
+2. **Registrar kernel Diabetes ML** disponibiliza o kernel com o nome **Diabetes — ML**. Se necessário, selecione esse nome uma vez no canto superior direito do notebook.
+3. **Iniciar aplicação (backend + frontend)** abre os dois servidores em terminais separados.
+
+A tarefa **Abrir Jupyter** inicia o JupyterLab no ambiente ML. Para encerrar os servidores, use **Ctrl+C** nos respectivos terminais ou **Tasks: Terminate Task**. A configuração aponta inicialmente para o ambiente ML, mas a seleção do kernel é independente e pode exigir uma escolha inicial. Depois de recriar ou mover o ambiente, execute novamente o registro do kernel.
+
+Os comandos abaixo também funcionam sem VS Code. Eles não exigem ativar manualmente um `.venv`: `uv run` utiliza o ambiente da pasta correspondente. Se `uv` ou `npm` não aparecerem após a instalação, reinicie o VS Code para atualizar o PATH.
 
 O `.gitignore` exclui ambientes virtuais, `node_modules`, arquivos locais de configuração e as pastas `data/` e `outputs/`.
 
@@ -55,8 +68,8 @@ Na raiz do repositório:
 
 ```powershell
 cd ml
-uv sync
-uv run jupyter lab
+uv sync --locked
+uv run --locked jupyter lab
 ```
 
 O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn e MLflow. Execute os notebooks de preparação do início ao fim:
@@ -72,28 +85,49 @@ Em outro terminal, partindo da raiz:
 
 ```powershell
 cd backend
-uv sync
+uv sync --locked
 ```
 
-O ambiente inclui FastAPI, Uvicorn e dependências para carregar pipelines scikit-learn pelo MLflow. Depois da implementação de `app.main`, a API será iniciada com:
+O ambiente inclui FastAPI, Uvicorn, configurações tipadas e ferramentas de verificação. As dependências para servir modelos serão adicionadas na etapa de inferência. Inicie a API com:
 
 ```powershell
-uv run uvicorn app.main:app --reload
+
 ```
 
-O comando de execução ainda não está disponível neste scaffold.
+A API fica em <http://127.0.0.1:8000>, com documentação em <http://127.0.0.1:8000/docs>. Os endpoints `GET /api/health/live` e `GET /api/health/ready` confirmam a saúde da aplicação. Nesta etapa, nenhum modelo é carregado. A configuração padrão funciona sem `.env`; `backend/.env.example` documenta as opções locais.
 
 ### Frontend
 
-A pasta `frontend/` está reservada para React, Vite e TypeScript. Quando a aplicação e seu `package.json` forem criados, a execução local será:
+A aplicação usa React, Vite e TypeScript. Em outro terminal, partindo da raiz:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-O frontend consultará a API pelo prefixo `/api`.
+Abra <http://127.0.0.1:5173>. O Vite encaminha `/api` para o backend. A página informa se a conexão está disponível e oferece **Verificar novamente** para repetir a consulta. A consulta tem timeout de cinco segundos. As portas são fixas: encerre qualquer aplicação que esteja ocupando 8000 ou 5173 antes de iniciar.
+
+### Verificações
+
+Em `backend/`:
+
+```powershell
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+uv run --locked pyright
+uv run --locked pytest
+```
+
+Em `frontend/`:
+
+```powershell
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
 
 ### MLflow local
 
@@ -101,6 +135,7 @@ O servidor usará o ambiente de `ml/`. Em um terminal separado, partindo da raiz
 
 ```powershell
 cd ml
+uv run --locked python -c "from pathlib import Path; Path('../outputs/mlflow').mkdir(parents=True, exist_ok=True)"
 uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
@@ -115,7 +150,7 @@ Ambos possuem notebooks separados de download, preparação e análise explorat�
 
 ## Licença
 
-O código deste projeto é disponibilizado sob a [licença MIT](LICENSE). Datasets e marcas institucionais permanecem sujeitos aos termos de seus respectivos titulares.
+O código deste projeto é disponibilizado sob a [licença MIT](LICENSE). A base de backend e frontend foi adaptada do SampleCodex; sua licença original está preservada em [docs/LICENSE-SampleCodex](docs/LICENSE-SampleCodex). Datasets e marcas institucionais permanecem sujeitos aos termos de seus respectivos titulares.
 
 ___
 
