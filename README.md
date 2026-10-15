@@ -72,10 +72,11 @@ uv sync --locked
 uv run --locked jupyter lab
 ```
 
-O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn e MLflow. Execute os notebooks de preparação do início ao fim:
+O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn, XGBoost e MLflow. Execute os notebooks de preparação do início ao fim:
 
 - [Download e preparação - UCI](ml/notebooks/01-prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`.
 - [Download e preparação - NIDDK Diabetes](ml/notebooks/02-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
+- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/03-xgboost-niddk-diabetes.en.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
 
 Cada notebook cria sua pasta de dados, mantém uma cópia do CSV original e registra a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. Nenhum modelo é treinado nesta etapa.
 
