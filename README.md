@@ -32,7 +32,7 @@ O projeto já possui notebooks de preparação e uma aplicação inicial: a pág
 │   └── src/                    # Página React/Vite com status da API
 ├── data/
 │   ├── uci-diabetes/           # Dados originais e Parquet do dataset UCI
-│   └── azure-diabetes/         # Dados originais e Parquet do dataset Azure Diabetes
+│   └── niddk-diabetes/         # Dados originais e Parquet do dataset NIDDK Diabetes
 ├── outputs/
 │   ├── mlflow/                 # Banco SQLite e artefatos do MLflow local
 │   └── models/                 # Exportações opcionais de modelos
@@ -75,7 +75,7 @@ uv run --locked jupyter lab
 O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn e MLflow. Execute os notebooks de preparação do início ao fim:
 
 - [Download e preparação - UCI](ml/notebooks/01-prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`.
-- [Download e preparação - Azure Diabetes](ml/notebooks/02-prepare-azure-diabetes.ipynb): salva `data/azure-diabetes/diabetes.parquet`.
+- [Download e preparação - NIDDK Diabetes](ml/notebooks/02-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
 
 Cada notebook cria sua pasta de dados, mantém uma cópia do CSV original e registra a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. Nenhum modelo é treinado nesta etapa.
 
@@ -91,7 +91,7 @@ uv sync --locked
 O ambiente inclui FastAPI, Uvicorn, configurações tipadas e ferramentas de verificação. As dependências para servir modelos serão adicionadas na etapa de inferência. Inicie a API com:
 
 ```powershell
-
+uv run --locked uvicorn app.main:app --reload
 ```
 
 A API fica em <http://127.0.0.1:8000>, com documentação em <http://127.0.0.1:8000/docs>. Os endpoints `GET /api/health/live` e `GET /api/health/ready` confirmam a saúde da aplicação. Nesta etapa, nenhum modelo é carregado. A configuração padrão funciona sem `.env`; `backend/.env.example` documenta as opções locais.
@@ -144,7 +144,7 @@ A interface ficará disponível em <http://127.0.0.1:5000>. O futuro notebook de
 ## Datasets em avaliação
 
 - [Early Stage Diabetes Risk Prediction - UCI](https://archive.ics.uci.edu/dataset/529/early+stage+diabetes+risk+prediction+dataset)
-- [Azure Diabetes](https://github.com/MicrosoftLearning/AI-900-AIFundamentals/blob/main/data/ml/diabetes.csv)
+- [Diabetes - NIDDK](https://www.niddk.nih.gov/) — CSV distribuído pelo [MicrosoftLearning/AI-900-AIFundamentals](https://github.com/MicrosoftLearning/AI-900-AIFundamentals/blob/main/data/ml/diabetes.csv)
 
 Ambos possuem notebooks separados de download, preparação e análise exploratória. A escolha do dataset para o modelo será feita posteriormente.
 
