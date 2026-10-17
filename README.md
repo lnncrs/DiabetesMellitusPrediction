@@ -151,7 +151,9 @@ Ambos possuem notebooks separados de download, preparação e análise explorat�
 
 ## Licença
 
-O código deste projeto é disponibilizado sob a [licença MIT](LICENSE). A base de backend e frontend foi adaptada do SampleCodex; sua licença original está preservada em [docs/LICENSE-SampleCodex](docs/LICENSE-SampleCodex). Datasets e marcas institucionais permanecem sujeitos aos termos de seus respectivos titulares.
+O código deste projeto é disponibilizado sob a [licença MIT](LICENSE).
+
+A base de backend e frontend foi adaptada do projeto [SampleCodex](https://github.com/lnncrs/SampleCodex)
 
 ___
 
