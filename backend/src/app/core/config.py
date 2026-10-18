@@ -1,7 +1,8 @@
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, HttpUrl, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["local", "development", "test", "staging", "production"]
@@ -18,7 +19,7 @@ def get_package_version() -> str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parents[3] / ".env",
         env_prefix="APP_",
         extra="ignore",
     )
@@ -28,3 +29,12 @@ class Settings(BaseSettings):
     version: str = Field(default_factory=get_package_version)
     log_level: LogLevel = "INFO"
     log_format: LogFormat = "text"
+    mlflow_tracking_uri: HttpUrl = HttpUrl("http://127.0.0.1:5000")
+    mlflow_model_name: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.-]+$")
+    mlflow_model_version: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def validate_model_configuration(self) -> Settings:
+        if (self.mlflow_model_name is None) != (self.mlflow_model_version is None):
+            raise ValueError("Configure nome e versão do modelo juntos.")
+        return self

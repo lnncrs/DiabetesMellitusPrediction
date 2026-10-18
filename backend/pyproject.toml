@@ -5,6 +5,13 @@ description = "API acadêmica de predição de diabetes e explicabilidade."
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi",
+    "mlflow==3.17.1",
+    "scikit-learn==1.9.1",
+    "xgboost==3.4.1",
+    "pandas==3.0.6",
+    "numpy==2.5.4",
+    "scipy==1.18.1",
+    "cloudpickle==3.1.2",
     "pydantic-settings",
     "python-json-logger",
     "uvicorn[standard]",

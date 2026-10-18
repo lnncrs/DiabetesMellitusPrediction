@@ -5,6 +5,7 @@ from app.core.config import Settings
 from app.core.errors import add_exception_handlers
 from app.core.logging import configure_logging
 from app.dependencies import get_settings
+from app.inference import ModelService
 from app.lifespan import lifespan
 from app.middleware.request_id import RequestIdMiddleware
 
@@ -18,6 +19,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.logger = logger
+    application.state.model_service = ModelService(app_settings)
     application.dependency_overrides[get_settings] = lambda: app_settings
     application.add_middleware(RequestIdMiddleware)
     add_exception_handlers(application)

@@ -27,6 +27,6 @@ def test_readiness_health_response() -> None:
 
     response = client.get("/api/health/ready")
 
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()["status"] == "ok"
-    assert response.json()["checks"] == {}
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json()["status"] == "not_ready"
+    assert response.json()["checks"] == {"model": "unavailable"}
