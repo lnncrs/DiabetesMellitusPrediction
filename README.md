@@ -14,7 +14,7 @@ lenin.cristi@aluno.ufabc.edu.br
 
 Projeto didático para explorar a explicabilidade de modelos de aprendizado de máquina e a usabilidade de uma interface em português através da predição de diabetes. A proposta integra notebooks de preparação e treinamento, registro de modelos em MLflow, uma API em FastAPI e uma interface em Vite + React.
 
-O projeto já possui notebooks de preparação e uma aplicação inicial: a página em React consulta a saúde da API FastAPI. O treinamento, a predição e a explicabilidade serão desenvolvidos nas próximas etapas. Os resultados terão finalidade educacional e não constituirão diagnóstico médico.
+O projeto possui notebooks de preparação e treinamento, registro de modelos em MLflow, uma API e um formulário de predição em React. A página Home reúne a apresentação e o status da API. A explicabilidade será desenvolvida nas próximas etapas. Os resultados têm finalidade educacional e não constituem diagnóstico médico.
 
 ## Estrutura do projeto
 
@@ -25,11 +25,11 @@ O projeto já possui notebooks de preparação e uma aplicação inicial: a pág
 │   ├── notebooks/              # Preparação, treinamento e explicabilidade
 │   └── pyproject.toml          # Ambiente Python de experimentação
 ├── backend/
-│   ├── src/app/                # Aplicação FastAPI e endpoints de saúde
+│   ├── src/app/                # Aplicação FastAPI, saúde e predição
 │   ├── tests/                  # Testes da API
 │   └── pyproject.toml          # Ambiente Python da API
 ├── frontend/
-│   └── src/                    # Página React/Vite com status da API
+│   └── src/                    # Formulário de predição e Home com status da API
 ├── data/
 │   ├── uci-diabetes/           # Dados originais e Parquet do dataset UCI
 │   └── niddk-diabetes/         # Dados originais e Parquet do dataset NIDDK Diabetes
@@ -90,13 +90,57 @@ cd backend
 uv sync --locked
 ```
 
-O ambiente inclui FastAPI, Uvicorn, configurações tipadas e ferramentas de verificação. As dependências para servir modelos serão adicionadas na etapa de inferência. Inicie a API com:
+O ambiente inclui FastAPI, Uvicorn e as bibliotecas necessárias para carregar o pipeline do notebook 04. As versões de MLflow, scikit-learn, XGBoost, pandas, NumPy, SciPy e cloudpickle estão alinhadas ao ambiente de treinamento.
+
+Dentro de `backend/`, copie `.env.example` para `.env` (se ainda não existir) e escolha uma versão existente no Model Registry:
+
+```dotenv
+APP_MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+APP_MLFLOW_MODEL_NAME=niddk-diabetes-xgboost
+APP_MLFLOW_MODEL_VERSION=4
+```
+
+O `.env` é lido a partir de `backend/`, mesmo quando a aplicação é importada de outro diretório. Variáveis do processo têm precedência. Nome e versão devem ser configurados juntos; a versão é um inteiro positivo. Inicie primeiro o MLflow com o modelo registrado e depois a API:
 
 ```powershell
 uv run --locked uvicorn app.main:app --reload
 ```
 
-A API fica em <http://127.0.0.1:8000>, com documentação em <http://127.0.0.1:8000/docs>. Os endpoints `GET /api/health/live` e `GET /api/health/ready` confirmam a saúde da aplicação. Nesta etapa, nenhum modelo é carregado. A configuração padrão funciona sem `.env`; `backend/.env.example` documenta as opções locais.
+A API fica em <http://127.0.0.1:8000>, com documentação e exemplo executável em <http://127.0.0.1:8000/docs>.
+
+- `GET /api/health/live`: confirma que a API está funcionando.
+- `GET /api/health/ready`: retorna 200 quando o modelo está carregado e 503 quando está indisponível.
+- `POST /api/predict`: recebe os oito atributos em português e retorna a classe, a probabilidade da classe 1 e a identificação do modelo usado.
+
+O modelo é baixado e carregado uma vez na inicialização. Uma versão fixa é utilizada até reiniciar a API; alterar o `.env` também exige reinício. Se o MLflow estiver inacessível, a versão não existir ou o contrato for incompatível, a API mantém o health e retorna 503 nas predições. Depois de corrigir a configuração, reinicie a API. Sem nome e versão configurados, ela também permanece sem modelo. Após carregar, as predições usam o modelo em memória e não consultam o MLflow a cada requisição.
+
+Exemplo de corpo JSON para `POST /api/predict`:
+
+```json
+{
+  "gestacoes": 0,
+  "glicose_plasmatica": 171,
+  "pressao_arterial_diastolica": 80,
+  "espessura_triceps": 34,
+  "insulina_serica": 23,
+  "imc": 43.50972593,
+  "indice_hereditariedade_diabetes": 1.213191354,
+  "idade": 21
+}
+```
+
+Resposta exemplificativa da versão 4:
+
+```json
+{
+  "predicted_class": 0,
+  "probability_diabetes": 0.019996361806988716,
+  "model_name": "niddk-diabetes-xgboost",
+  "model_version": 4
+}
+```
+
+As classes 0 e 1 correspondem aos rótulos sem diabetes e diabetes no dataset. A probabilidade é a estimativa do modelo para a classe 1. Não envie identificador ou alvo. Campos ausentes, extras, valores negativos ou não finitos retornam 422. Os campos definidos como inteiros devem ser enviados como inteiros. Esta versão da API atende somente ao contrato numérico do NIDDK; não é intercambiável com o dataset UCI.
 
 ### Frontend
 
@@ -108,7 +152,14 @@ npm ci
 npm run dev
 ```
 
-Abra <http://127.0.0.1:5173>. O Vite encaminha `/api` para o backend. A página informa se a conexão está disponível e oferece **Verificar novamente** para repetir a consulta. A consulta tem timeout de cinco segundos. As portas são fixas: encerre qualquer aplicação que esteja ocupando 8000 ou 5173 antes de iniciar.
+Abra <http://127.0.0.1:5173>. O Vite encaminha `/api` para o backend. As portas são fixas: encerre qualquer aplicação que esteja ocupando 8000 ou 5173 antes de iniciar.
+
+- `/`: formulário com os oito campos em português, botão **Consultar modelo**, botão **Limpar formulário** e área de resultado com classe, probabilidade, nome e versão do modelo.
+- `/home`: apresentação do projeto e status da API, com **Verificar novamente**. Essa consulta tem timeout de cinco segundos.
+
+Os botões **Caso 1** a **Caso 5** preenchem o formulário com as linhas 0, 3, 8, 12 e 25 do dataset NIDDK preparado, sem identificador ou alvo. Os valores estão versionados em `frontend/src/fixtures/predictionCases.ts`, portanto o frontend não precisa acessar a pasta de dados local. São exemplos de preenchimento, não um conjunto independente de avaliação. A consulta só acontece ao clicar em **Consultar modelo**.
+
+Todos os campos são obrigatórios e devem respeitar o contrato numérico da API. A consulta tem timeout de 30 segundos. A interface apresenta carregamento e erros, impede envios duplicados enquanto aguarda e remove o resultado antigo ao editar os campos ou selecionar outro caso. **Limpar formulário** apaga os campos, o resultado e eventuais erros, além de cancelar uma consulta pendente. Nenhum dado é persistido no navegador.
 
 ### Verificações
 
@@ -141,7 +192,7 @@ uv run --locked python -c "from pathlib import Path; Path('../outputs/mlflow').m
 uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
-A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. O carregamento pela API fica para uma etapa posterior.
+A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. Para utilizá-la na API, configure nome e versão no `backend/.env` e reinicie o backend.
 
 ## Datasets em avaliação
 
