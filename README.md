@@ -76,9 +76,10 @@ O ambiente reúne ferramentas de aquisição de dados, análise, visualização,
 
 - [Download e preparação - UCI](ml/notebooks/01-prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`.
 - [Download e preparação - NIDDK Diabetes](ml/notebooks/02-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
-- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/03-xgboost-niddk-diabetes.en.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
+- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/03-xgboost-niddk-diabetes.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
+- [XGBoost com MLflow - NIDDK Diabetes](ml/notebooks/04-mlflow-niddk-diabetes.ipynb): reproduz o experimento do 03 de forma independente, usa `mlflow.sklearn.autolog()` para registrar parâmetros, métricas de treino e o pipeline no Model Registry, mantém métricas de teste e artefatos específicos explícitos e verifica a recarga. Execute a preparação 02 e inicie o servidor MLflow antes de rodá-lo; não é necessário executar o 03.
 
-Cada notebook cria sua pasta de dados, mantém uma cópia do CSV original e registra a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. Nenhum modelo é treinado nesta etapa.
+Os notebooks de preparação (01 e 02) criam sua pasta de dados, mantêm uma cópia do CSV original e registram a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. O treinamento acontece nos notebooks 03 e 04.
 
 ### Backend
 
@@ -140,7 +141,7 @@ uv run --locked python -c "from pathlib import Path; Path('../outputs/mlflow').m
 uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
-A interface ficará disponível em <http://127.0.0.1:5000>. O futuro notebook de treinamento registrará parâmetros, métricas e versões do pipeline completo nesse servidor. A API carregará a versão escolhida durante sua inicialização.
+A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. O carregamento pela API fica para uma etapa posterior.
 
 ## Datasets em avaliação
 
@@ -151,7 +152,7 @@ Ambos possuem notebooks separados de download, preparação e análise explorat�
 
 ## Licença
 
-O código deste projeto é disponibilizado sob a [licença MIT](LICENSE).
+O código deste projeto é disponibilizado sob a licença [MIT](LICENSE).
 
 A base de backend e frontend foi adaptada do projeto [SampleCodex](https://github.com/lnncrs/SampleCodex)
 
