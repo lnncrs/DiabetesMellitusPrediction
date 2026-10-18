@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 
 import App from './App'
@@ -14,9 +14,14 @@ const mockFetch = vi.fn<typeof fetch>()
 
 globalThis.fetch = mockFetch
 
+beforeEach(() => {
+  window.history.replaceState({}, '', '/home')
+})
+
 afterEach(() => {
   cleanup()
   mockFetch.mockReset()
+  window.history.replaceState({}, '', '/')
 })
 
 describe('App', () => {
@@ -68,7 +73,7 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      screen.getByRole('heading', { name: 'Diabetes Mellitus Prediction' }),
+      screen.getByRole('heading', { name: 'Predição de Diabetes Mellitus' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveAccessibleName('')
     expect(screen.getByRole('status')).toHaveTextContent('Verificando conexão')
