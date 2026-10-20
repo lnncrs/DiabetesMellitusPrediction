@@ -73,6 +73,39 @@ def test_prediction_loads_once_and_preserves_named_features(
     )
 
 
+def test_latest_model_version_is_resolved_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = fake_model()
+    download = Mock(return_value="local-model")
+    client = Mock()
+    client.get_latest_versions.return_value = [
+        Mock(version="4"),
+        Mock(version="7"),
+    ]
+    monkeypatch.setattr("app.inference.MlflowClient", Mock(return_value=client))
+    monkeypatch.setattr("app.inference.mlflow.artifacts.download_artifacts", download)
+    monkeypatch.setattr(
+        "app.inference.mlflow_sklearn.load_model", Mock(return_value=model)
+    )
+
+    service = ModelService(
+        Settings(
+            mlflow_model_name="niddk-diabetes-xgboost",
+            mlflow_model_version="latest",
+        )
+    )
+    service.load()
+
+    assert service.model_version == 7
+    client.get_latest_versions.assert_called_once_with("niddk-diabetes-xgboost")
+    download.assert_called_once_with(
+        artifact_uri="models:/niddk-diabetes-xgboost/7",
+        tracking_uri="http://127.0.0.1:5000/",
+        registry_uri="http://127.0.0.1:5000/",
+    )
+
+
 def test_load_failure_keeps_liveness_and_disables_prediction(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -161,13 +194,13 @@ def test_dotenv_configures_mlflow(
     env_file = tmp_path / ".env"
     env_file.write_text(
         "APP_MLFLOW_TRACKING_URI=http://localhost:5001\n"
-        "APP_MLFLOW_MODEL_NAME=other-model\nAPP_MLFLOW_MODEL_VERSION=7\n"
+        "APP_MLFLOW_MODEL_NAME=other-model\nAPP_MLFLOW_MODEL_VERSION=latest\n"
     )
     monkeypatch.setitem(Settings.model_config, "env_file", env_file)
     settings = Settings()
     assert str(settings.mlflow_tracking_uri) == "http://localhost:5001/"
     assert settings.mlflow_model_name == "other-model"
-    assert settings.mlflow_model_version == 7
+    assert settings.mlflow_model_version == "latest"
 
 
 @pytest.mark.parametrize(
@@ -176,6 +209,7 @@ def test_dotenv_configures_mlflow(
         {"mlflow_model_name": "model"},
         {"mlflow_model_version": 1},
         {"mlflow_model_name": "model", "mlflow_model_version": 0},
+        {"mlflow_model_name": "model", "mlflow_model_version": "oldest"},
         {"mlflow_model_name": "model/alias", "mlflow_model_version": 1},
         {"mlflow_tracking_uri": "not-a-url"},
     ],

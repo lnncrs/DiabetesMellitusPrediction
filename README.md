@@ -16,6 +16,62 @@ Projeto didático para explorar a explicabilidade de modelos de aprendizado de m
 
 O projeto possui notebooks de preparação e treinamento, registro de modelos em MLflow, uma API e um formulário de predição em React. A página Home reúne a apresentação e o status da API. A explicabilidade será desenvolvida nas próximas etapas. Os resultados têm finalidade educacional e não constituem diagnóstico médico.
 
+## Início rápido
+
+Instale Python 3.14 (ou permita que o `uv` o instale), `uv` e Node.js 24 LTS com NPM antes de começar.
+
+Clone este repositório de https://github.com/lnncrs/DiabetesMellitusPrediction
+
+### 1. Prepare o ambiente ML e registre um modelo
+
+Abra um terminal na pasta do repositório, navegue até a pasta ml, instale as dependências e abra o JupyterLab:
+
+```powershell
+cd ml
+uv sync
+uv run jupyter lab
+```
+
+#### Preparar dados
+
+Execute o notebook [02-prepare-niddk-diabetes.ipynb](ml/notebooks/02-prepare-niddk-diabetes.ipynb) do início ao fim, **este notebook faz o download e preparação dos dados** utilizados.
+
+Abra um novo terminal na pasta do repositório, navegue até a pasta ml e inicie o servidor MLflow:
+
+```powershell
+cd ml
+uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
+```
+
+#### Treinar & registrar o modelo
+
+Com o servidor MLflow em execução, execute o notebook [04-mlflow-niddk-diabetes.ipynb](ml/notebooks/04-mlflow-niddk-diabetes.ipynb) do início ao fim, **este notebook treina e registra uma versão do modelo**.
+
+### 2. Configure e inicie o backend
+
+Abra um novo terminal na pasta do repositório, navegue até a pasta backend, copie a configuração e inicie:
+
+```powershell
+cd backend
+uv sync
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+uv run uvicorn app.main:app --reload
+```
+
+O arquivo `.env` de exemplo usa `APP_MLFLOW_MODEL_VERSION=latest`, que carrega a versão mais recente registrada na inicialização. A API fica disponível em <http://127.0.0.1:8000> e a documentação em <http://127.0.0.1:8000/docs>.
+
+### 3. Configure e inicie o frontend
+
+Abra um novo terminal na pasta do repositório, navegue até a pasta frontend, prepare os pacottes e inicie:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Abra <http://127.0.0.1:5173>.
+
 ## Estrutura do projeto
 
 ```text
@@ -92,15 +148,15 @@ uv sync --locked
 
 O ambiente inclui FastAPI, Uvicorn e as bibliotecas necessárias para carregar o pipeline do notebook 04. As versões de MLflow, scikit-learn, XGBoost, pandas, NumPy, SciPy e cloudpickle estão alinhadas ao ambiente de treinamento.
 
-Dentro de `backend/`, copie `.env.example` para `.env` (se ainda não existir) e escolha uma versão existente no Model Registry:
+Dentro de `backend/`, copie `.env.example` para `.env` (se ainda não existir). Por padrão, ele seleciona a versão mais recente registrada no Model Registry:
 
 ```dotenv
 APP_MLFLOW_TRACKING_URI=http://127.0.0.1:5000
 APP_MLFLOW_MODEL_NAME=niddk-diabetes-xgboost
-APP_MLFLOW_MODEL_VERSION=4
+APP_MLFLOW_MODEL_VERSION=latest
 ```
 
-O `.env` é lido a partir de `backend/`, mesmo quando a aplicação é importada de outro diretório. Variáveis do processo têm precedência. Nome e versão devem ser configurados juntos; a versão é um inteiro positivo. Inicie primeiro o MLflow com o modelo registrado e depois a API:
+O `.env` é lido a partir de `backend/`, mesmo quando a aplicação é importada de outro diretório. Variáveis do processo têm precedência. Nome e versão devem ser configurados juntos; a versão pode ser `latest` ou um inteiro positivo. Com `latest`, o backend resolve a versão mais alta registrada ao iniciar e a mantém em memória até ser reiniciado. Inicie primeiro o MLflow com o modelo registrado e depois a API:
 
 ```powershell
 uv run --locked uvicorn app.main:app --reload
@@ -112,7 +168,7 @@ A API fica em <http://127.0.0.1:8000>, com documentação e exemplo executável 
 - `GET /api/health/ready`: retorna 200 quando o modelo está carregado e 503 quando está indisponível.
 - `POST /api/predict`: recebe os oito atributos em português e retorna a classe, a probabilidade da classe 1 e a identificação do modelo usado.
 
-O modelo é baixado e carregado uma vez na inicialização. Uma versão fixa é utilizada até reiniciar a API; alterar o `.env` também exige reinício. Se o MLflow estiver inacessível, a versão não existir ou o contrato for incompatível, a API mantém o health e retorna 503 nas predições. Depois de corrigir a configuração, reinicie a API. Sem nome e versão configurados, ela também permanece sem modelo. Após carregar, as predições usam o modelo em memória e não consultam o MLflow a cada requisição.
+O modelo é baixado e carregado uma vez na inicialização. Uma versão fixa ou a versão resolvida por `latest` é utilizada até reiniciar a API; alterar o `.env` também exige reinício. Se o MLflow estiver inacessível, a versão não existir ou o contrato for incompatível, a API mantém o health e retorna 503 nas predições. Depois de corrigir a configuração, reinicie a API. Sem nome e versão configurados, ela também permanece sem modelo. Após carregar, as predições usam o modelo em memória e não consultam o MLflow a cada requisição.
 
 Exemplo de corpo JSON para `POST /api/predict`:
 
@@ -192,7 +248,7 @@ uv run --locked python -c "from pathlib import Path; Path('../outputs/mlflow').m
 uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
-A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. Para utilizá-la na API, configure nome e versão no `backend/.env` e reinicie o backend.
+A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. Para utilizar a versão mais recente na API, mantenha `APP_MLFLOW_MODEL_VERSION=latest` no `backend/.env` e reinicie o backend.
 
 ## Datasets em avaliação
 

@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 Environment = Literal["local", "development", "test", "staging", "production"]
 LogFormat = Literal["text", "json"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+ModelVersion = int | Literal["latest"]
 
 
 def get_package_version() -> str:
@@ -31,10 +32,17 @@ class Settings(BaseSettings):
     log_format: LogFormat = "text"
     mlflow_tracking_uri: HttpUrl = HttpUrl("http://127.0.0.1:5000")
     mlflow_model_name: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.-]+$")
-    mlflow_model_version: int | None = Field(default=None, gt=0)
+    mlflow_model_version: ModelVersion | None = Field(default=None)
 
     @model_validator(mode="after")
     def validate_model_configuration(self) -> Settings:
         if (self.mlflow_model_name is None) != (self.mlflow_model_version is None):
             raise ValueError("Configure nome e versão do modelo juntos.")
+        if (
+            isinstance(self.mlflow_model_version, int)
+            and self.mlflow_model_version <= 0
+        ):
+            raise ValueError(
+                "A versão do modelo deve ser um inteiro positivo ou 'latest'."
+            )
         return self

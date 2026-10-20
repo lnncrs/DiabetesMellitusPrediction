@@ -1,4 +1,4 @@
-"""Carregamento de uma versão fixa e inferência fora da camada HTTP."""
+"""Carregamento e inferência de modelo fora da camada HTTP."""
 
 from typing import Any, Literal
 
@@ -6,6 +6,7 @@ import mlflow.artifacts
 import mlflow.sklearn as mlflow_sklearn
 import numpy as np
 import pandas as pd
+from mlflow import MlflowClient
 
 from app.core.config import Settings
 
@@ -29,6 +30,7 @@ class ModelService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.model: Any = None
+        self.model_version: int | None = None
 
     @property
     def is_ready(self) -> bool:
@@ -36,16 +38,15 @@ class ModelService:
 
     def load(self) -> None:
         self.model = None
+        self.model_version = None
         if self.settings.mlflow_model_name is None:
             return
-        model_uri = (
-            f"models:/{self.settings.mlflow_model_name}/"
-            f"{self.settings.mlflow_model_version}"
-        )
         # O servidor usa um único registro por processo. A versão atual do MLflow
         # também consulta a configuração global ao resolver URIs models:/.
         mlflow.set_tracking_uri(str(self.settings.mlflow_tracking_uri))
         mlflow.set_registry_uri(str(self.settings.mlflow_tracking_uri))
+        model_version = self._resolve_model_version()
+        model_uri = f"models:/{self.settings.mlflow_model_name}/{model_version}"
         local_path = mlflow.artifacts.download_artifacts(
             artifact_uri=model_uri,
             tracking_uri=str(self.settings.mlflow_tracking_uri),
@@ -57,6 +58,20 @@ class ModelService:
         if list(model.classes_) != [0, 1]:
             raise ValueError("O modelo não possui as classes esperadas: 0 e 1.")
         self.model = model
+        self.model_version = model_version
+
+    def _resolve_model_version(self) -> int:
+        configured_version = self.settings.mlflow_model_version
+        if isinstance(configured_version, int):
+            return configured_version
+        assert configured_version == "latest"
+        assert self.settings.mlflow_model_name is not None
+        versions = MlflowClient(
+            tracking_uri=str(self.settings.mlflow_tracking_uri)
+        ).get_latest_versions(self.settings.mlflow_model_name)
+        if not versions:
+            raise ValueError("Não há versões registradas para o modelo configurado.")
+        return max(int(version.version) for version in versions)
 
     def predict(self, features: dict[str, int | float]) -> tuple[Literal[0, 1], float]:
         if self.model is None:

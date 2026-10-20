@@ -27,10 +27,10 @@ def predict(
             detail="Modelo indisponível. Confira a configuração e reinicie a API.",
         ) from exc
     assert service.settings.mlflow_model_name is not None
-    assert service.settings.mlflow_model_version is not None
+    assert service.model_version is not None
     return PredictionOutput(
         predicted_class=predicted_class,
         probability_diabetes=probability,
         model_name=service.settings.mlflow_model_name,
-        model_version=service.settings.mlflow_model_version,
+        model_version=service.model_version,
     )
