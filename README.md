@@ -12,29 +12,35 @@ lenin.cristi@aluno.ufabc.edu.br
 
 ## Resumo
 
-Projeto didático para explorar a explicabilidade de modelos de aprendizado de máquina e a usabilidade de uma interface em português através da predição de diabetes. A proposta integra notebooks de preparação e treinamento, registro de modelos em MLflow, uma API em FastAPI e uma interface em Vite + React.
+Projeto didático para explorar a explicabilidade de modelos de aprendizado de máquina e a usabilidade de uma interface em português para predição de diabetes.
 
-O projeto possui notebooks de preparação e treinamento, registro de modelos em MLflow, uma API e um formulário de predição em React. A página Home reúne a apresentação e o status da API. A explicabilidade será desenvolvida nas próximas etapas. Os resultados têm finalidade educacional e não constituem diagnóstico médico.
+A proposta integra **Ciência de Dados** em notebooks de preparação e treinamento, **MLOps** no registro de modelos em MLflow, **Engenharia de Software Backend** na construção de uma API em FastAPI + Uvicorn que busca e serve estes modelos e **Engenharia de Software Frontend** na criação de uma interface em Vite + React para uma UX intuitiva de predição de diabetes.
+
+<mark>Os resultados têm finalidade educacional e não constituem diagnóstico médico.</mark>
 
 ## Início rápido
 
-Instale Python 3.14 (ou permita que o `uv` o instale), `uv` e Node.js 24 LTS com NPM antes de começar.
+Voce vai precisar preparar o ambiente de ML, registrar um modelo, configurar e iniciar o backend e o frontend para utilizar a aplicação. Siga os passos abaixo para começar rapidamente.
+
+Certifique-se de ter instalado:
+
+- [git](https://git-scm.com/)
+- [vscode (Visual Studio Code)](https://code.visualstudio.com/)
+- [uv](https://docs.astral.sh/uv/)
+- [Node.js 24 LTS](https://nodejs.org/)
 
 Clone este repositório de https://github.com/lnncrs/DiabetesMellitusPrediction
 
-### 1. Prepare o ambiente ML e registre um modelo
+### 1. Prepare o ambiente de ML
 
-Abra um terminal na pasta do repositório, navegue até a pasta ml, instale as dependências e abra o JupyterLab:
+Abra um terminal na pasta do repositório, navegue até a pasta ml, instale as dependências:
 
 ```powershell
 cd ml
 uv sync
-uv run jupyter lab
 ```
 
-#### Preparar dados
-
-Execute o notebook [01-prepare-niddk-diabetes.ipynb](ml/notebooks/01-prepare-niddk-diabetes.ipynb) do início ao fim, **este notebook faz o download e preparação dos dados** utilizados.
+### 2. Inicie o servidor MLflow
 
 Abra um novo terminal na pasta do repositório, navegue até a pasta ml e inicie o servidor MLflow:
 
@@ -43,13 +49,19 @@ cd ml
 uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
-#### Treinar & registrar o modelo
+**A interface do MLflow estará disponível em <http://127.0.0.1:5000>.**
+
+### 3. Prepare os dados
+
+Execute o notebook [02-prepare-niddk-diabetes.ipynb](ml/notebooks/02-prepare-niddk-diabetes.ipynb) do início ao fim, **este notebook faz o download e preparação dos dados** utilizados.
+
+### 4. Treinar & registrar o modelo
 
 Com o servidor MLflow em execução, execute o notebook [03-mlflow-niddk-diabetes.ipynb](ml/notebooks/03-mlflow-niddk-diabetes.ipynb) do início ao fim, **este notebook treina e registra uma versão do modelo**.
 
-### 2. Configure e inicie o backend
+### 5. Inicie o backend
 
-Abra um novo terminal na pasta do repositório, navegue até a pasta backend, copie a configuração e inicie:
+Abra um novo terminal na pasta do repositório, navegue até a pasta backend e execute os comandos:
 
 ```powershell
 cd backend
@@ -58,11 +70,11 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 uv run uvicorn app.main:app --reload
 ```
 
-O arquivo `.env` de exemplo usa `APP_MLFLOW_MODEL_VERSION=latest`, que carrega a versão mais recente registrada na inicialização. A API fica disponível em <http://127.0.0.1:8000> e a documentação em <http://127.0.0.1:8000/docs>.
+O arquivo `.env` de exemplo usa `APP_MLFLOW_MODEL_VERSION=latest`, que carrega a versão mais recente registrada na inicialização.
 
-### 3. Configure e inicie o frontend
+### 6. Inicie o frontend
 
-Abra um novo terminal na pasta do repositório, navegue até a pasta frontend, prepare os pacottes e inicie:
+Abra um novo terminal na pasta do repositório, navegue até a pasta frontend e execute os comandos:
 
 ```powershell
 cd frontend
@@ -70,7 +82,7 @@ npm ci
 npm run dev
 ```
 
-Abra <http://127.0.0.1:5173>.
+**A interface web estará disponível em <http://127.0.0.1:5173>.**
 
 ## Estrutura do projeto
 
@@ -102,55 +114,73 @@ As pastas `data/` e `outputs/` são ignoradas pelo Git e serão criadas pelos no
 
 ## Ambiente local
 
-Instale Python 3.14 (ou permita que o `uv` o instale), `uv` e Node.js 24 LTS com NPM. Há dois ambientes virtuais independentes, `ml/.venv` e `backend/.venv`, e dependências NPM em `frontend/node_modules`. As versões Python estão registradas nos respectivos `uv.lock`; o frontend usa `package-lock.json`. PyTorch será incorporado quando o experimento com rede neural for definido.
-
-### Operação pelo VS Code
-
-Abra a raiz deste repositório e instale as extensões recomendadas. Use **Ctrl+Shift+P → Tasks: Run Task** (Tarefas: Executar Tarefa):
-
-1. **Preparar todos os ambientes** instala as dependências das três áreas.
-2. **Registrar kernel Diabetes ML** disponibiliza o kernel com o nome **Diabetes — ML**. Se necessário, selecione esse nome uma vez no canto superior direito do notebook.
-3. **Iniciar aplicação (backend + frontend)** abre os dois servidores em terminais separados.
-
-A tarefa **Abrir Jupyter** inicia o JupyterLab no ambiente ML. Para encerrar os servidores, use **Ctrl+C** nos respectivos terminais ou **Tasks: Terminate Task**. A configuração aponta inicialmente para o ambiente ML, mas a seleção do kernel é independente e pode exigir uma escolha inicial. Depois de recriar ou mover o ambiente, execute novamente o registro do kernel.
-
-Os comandos abaixo também funcionam sem VS Code. Eles não exigem ativar manualmente um `.venv`: `uv run` utiliza o ambiente da pasta correspondente. Se `uv` ou `npm` não aparecerem após a instalação, reinicie o VS Code para atualizar o PATH.
+Os ambientes de treinamento e backend são preparados usando `uv`: `ml/.venv` e `backend/.venv`. O ambiente frontend é preparado com `npm install`, e dependências NPM ficam em `frontend/node_modules`. As versões Python estão registradas nos respectivos `uv.lock`; o frontend usa `package-lock.json`.
 
 O `.gitignore` exclui ambientes virtuais, `node_modules`, arquivos locais de configuração e as pastas `data/` e `outputs/`.
 
-### Experimentação e notebooks
+### Datasets em avaliação
 
-Na raiz do repositório:
+- [Early Stage Diabetes Risk Prediction - UCI](https://archive.ics.uci.edu/dataset/529/early+stage+diabetes+risk+prediction+dataset)
+
+- [Diabetes - NIDDK](https://www.niddk.nih.gov/) distribuído pelo [MicrosoftLearning/AI-900-AIFundamentals](https://github.com/MicrosoftLearning/AI-900-AIFundamentals/blob/main/data/ml/diabetes.csv)
+
+Ambos possuem notebooks separados de download, preparação e análise exploratória.
+
+### Fluxo do projeto
+
+O fluxo do projeto começa com a preparação dos dados, passa pelo treinamento e registro do modelo no MLflow e termina com sua disponibilização pela API e pela interface web. O ambiente `ml` reúne as ferramentas de aquisição, análise e visualização, além de scikit-learn, XGBoost e MLflow.
+
+### Executando o MLflow localmente
+
+Execute o servidor MLFlow a seguir no terminal a partir da raiz do repositório:
 
 ```powershell
 cd ml
-uv sync --locked
-uv run --locked jupyter lab
+uv sync
+uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
 ```
 
-O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn, XGBoost e MLflow. Execute os notebooks de preparação do início ao fim:
+**A interface do MLflow estará disponível em <http://127.0.0.1:5000>.**
 
-- [Download e preparação - NIDDK Diabetes](ml/notebooks/01-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
-- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/02-xgboost-niddk-diabetes.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
-- [XGBoost com MLflow - NIDDK Diabetes](ml/notebooks/03-mlflow-niddk-diabetes.ipynb): reproduz o experimento do 02 de forma independente, usa `mlflow.sklearn.autolog()` para registrar parâmetros, métricas de treino e o pipeline no Model Registry, mantém métricas de teste e artefatos específicos explícitos e verifica a recarga. Execute a preparação 01 e inicie o servidor MLflow antes de rodá-lo; não é necessário executar o 02.
-- [XGBoost com Azure Machine Learning - NIDDK Diabetes](ml/notebooks/04-azureml-niddk-diabetes.ipynb): treina localmente e registra a execução, os artefatos, o modelo e versões dos data assets de treino/teste em um workspace Azure Machine Learning. Execute a preparação 01, copie [`ml/.env.example`](ml/.env.example) para `ml/.env`, preencha os identificadores do seu workspace e execute `az login`; não compartilhe nem versione o arquivo `.env`.
-- [Responsible AI com Azure Machine Learning - NIDDK Diabetes](ml/notebooks/05-responsible-niddk-diabetes.ipynb): usa as versões mais recentes do modelo e dos data assets publicados pelo notebook 04 para criar um dashboard com análise de erros e explicabilidade no Azure ML. Além das configurações do notebook 04, defina `AZURE_ML_COMPUTE` em `ml/.env` com o nome de um compute existente no workspace.
-- [Download e preparação - UCI (arquivado)](ml/notebooks/archive/prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`; não integra a sequência principal NIDDK.
+O notebook 04 usa `mlflow.sklearn.autolog()` para registrar parâmetros, métricas, gráficos, metadados e o modelo no Model Registry.
 
-Os notebooks de preparação criam sua pasta de dados, mantêm uma cópia do CSV original e registram a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. A sequência NIDDK usa os notebooks 01 a 05; o notebook UCI permanece arquivado.
+Cada execução cria uma nova rodada dentro do experimento `niddk-diabetes-xgboost`, que o notebook recarrega para conferir previsões.
 
-### Backend
+### Preparando os dados
 
-Em outro terminal, partindo da raiz:
+Prepare o ambiente de desenvolvimento executando `uv sync` dentro da pasta `ml` para instalar as dependências Python necessárias:
+
+```powershell
+cd ml
+uv sync
+```
+
+Os notebooks 01 e 02 baixam e preparam os dados, seus CSVs originais, metadados de origem e arquivos parquet ficam em `data/`.
+
+Downloads já existentes são reutilizados, mas `FORCE_DOWNLOAD = True` permite sobrescrevê-los. Durante a preparação, os notebooks também verificam tipos, valores ausentes e duplicados, estatísticas, balanceamento das classes e geram gráficos exploratórios.
+
+- [01 - Download e preparação - UCI](ml/notebooks/01-prepare-uci-diabetes.ipynb) gera `data/uci-diabetes/diabetes.parquet`.
+
+- [02 - Download e preparação - NIDDK Diabetes](ml/notebooks/02-prepare-niddk-diabetes.ipynb) gera `data/niddk-diabetes/diabetes.parquet`.
+
+### Treinando o modelo
+
+Com os dados NIDDK preparados pelo notebook 02, o notebook [03 - Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/03-xgboost-niddk-diabetes.ipynb) separa os atributos do alvo, cria os conjuntos de treino e teste e avalia um classificador XGBoost.
+
+O notebook [04 - XGBoost com MLflow - NIDDK Diabetes](ml/notebooks/04-mlflow-niddk-diabetes.ipynb) repete esse experimento de forma independente e registra seu resultado no MLflow, para executá-lo é necessário rodar o servidor do MLflow localmente.
+
+### Executando o Backend
+
+O backend FastAPI carrega o último modelo registrado pelo notebook 04 e suas versões de MLflow, scikit-learn, XGBoost, pandas, NumPy, SciPy e cloudpickle acompanham o ambiente de treinamento para assegurar a compatibilidade do modelo.
+
+Prepare o ambiente de execução do backend executando `uv sync` dentro da pasta `backend` para instalar as dependências Python necessárias:
 
 ```powershell
 cd backend
-uv sync --locked
+uv sync
 ```
 
-O ambiente inclui FastAPI, Uvicorn e as bibliotecas necessárias para carregar o pipeline do notebook 04. As versões de MLflow, scikit-learn, XGBoost, pandas, NumPy, SciPy e cloudpickle estão alinhadas ao ambiente de treinamento.
-
-Dentro de `backend/`, copie `.env.example` para `.env` (se ainda não existir). Por padrão, ele seleciona a versão mais recente registrada no Model Registry:
+Ainda em `backend/`, copie `.env.example` para `.env`, configuração padrão busca a versão mais recente de `niddk-diabetes-xgboost`:
 
 ```dotenv
 APP_MLFLOW_TRACKING_URI=http://127.0.0.1:5000
@@ -158,19 +188,23 @@ APP_MLFLOW_MODEL_NAME=niddk-diabetes-xgboost
 APP_MLFLOW_MODEL_VERSION=latest
 ```
 
-O `.env` é lido a partir de `backend/`, mesmo quando a aplicação é importada de outro diretório. Variáveis do processo têm precedência. Nome e versão devem ser configurados juntos; a versão pode ser `latest` ou um inteiro positivo. Com `latest`, o backend resolve a versão mais alta registrada ao iniciar e a mantém em memória até ser reiniciado. Inicie primeiro o MLflow com o modelo registrado e depois a API:
+A variável `APP_MLFLOW_MODEL_VERSION` aceita `latest` ou um inteiro positivo, sendo que `latest` resolve a maior versão disponível na inicialização.
+
+Depois de registrar o modelo e manter o MLflow ativo, inicie a API a partir de `backend/` com:
 
 ```powershell
-uv run --locked uvicorn app.main:app --reload
+uvicorn app.main:app --reload
 ```
 
-A API fica em <http://127.0.0.1:8000>, com documentação e exemplo executável em <http://127.0.0.1:8000/docs>.
+**O backend estará disponível em <http://127.0.0.1:8000>.**
 
-- `GET /api/health/live`: confirma que a API está funcionando.
-- `GET /api/health/ready`: retorna 200 quando o modelo está carregado e 503 quando está indisponível.
-- `POST /api/predict`: recebe os oito atributos em português e retorna a classe, a probabilidade da classe 1 e a identificação do modelo usado.
+`GET /api/health/live` confirma que a API está em execução, enquanto `GET /api/health/ready` retorna 200 apenas quando o modelo foi carregado e 503 quando ele não está disponível.
 
-O modelo é baixado e carregado uma vez na inicialização. Uma versão fixa ou a versão resolvida por `latest` é utilizada até reiniciar a API; alterar o `.env` também exige reinício. Se o MLflow estiver inacessível, a versão não existir ou o contrato for incompatível, a API mantém o health e retorna 503 nas predições. Depois de corrigir a configuração, reinicie a API. Sem nome e versão configurados, ela também permanece sem modelo. Após carregar, as predições usam o modelo em memória e não consultam o MLflow a cada requisição.
+Para prever, envie os oito atributos em português a `POST /api/predict`; a resposta inclui a classe, a probabilidade de diabetes e a identificação da versão usada.
+
+O modelo é baixado apenas durante a inicialização e permanece em memória até o reinício, inclusive quando a versão é resolvida por `latest`.
+
+Reinicie a API após alterar o `.env` ou registrar uma nova versão que deva ser usada. Se o MLflow estiver indisponível, a configuração for inválida ou o contrato do modelo for incompatível, os endpoints de health continuarão acessíveis e as previsões retornarão 503.
 
 Exemplo de corpo JSON para `POST /api/predict`:
 
@@ -198,11 +232,15 @@ Resposta exemplificativa da versão 4:
 }
 ```
 
-As classes 0 e 1 correspondem aos rótulos sem diabetes e diabetes no dataset. A probabilidade é a estimativa do modelo para a classe 1. Não envie identificador ou alvo. Campos ausentes, extras, valores negativos ou não finitos retornam 422. Os campos definidos como inteiros devem ser enviados como inteiros. Esta versão da API atende somente ao contrato numérico do NIDDK; não é intercambiável com o dataset UCI.
+**As classes 0 e 1 representam, respectivamente, os rótulos sem diabetes e diabetes; a probabilidade é a estimativa para a classe 1.**
 
-### Frontend
+O corpo não deve incluir identificador ou alvo e campos ausentes ou extras, valores negativos ou não finitos retornam 422, assim como valores fora do contrato numérico NIDDK.
 
-A aplicação usa React, Vite e TypeScript. Em outro terminal, partindo da raiz:
+Campos inteiros devem ser enviados como inteiros, e a API não é intercambiável com o dataset UCI.
+
+### Executando o Frontend
+
+A aplicação React, Vite e TypeScript consome a API e oferece uma interface para consulta do modelo. Em outro terminal, a partir da raiz execute:
 
 ```powershell
 cd frontend
@@ -210,14 +248,21 @@ npm ci
 npm run dev
 ```
 
-Abra <http://127.0.0.1:5173>. O Vite encaminha `/api` para o backend. As portas são fixas: encerre qualquer aplicação que esteja ocupando 8000 ou 5173 antes de iniciar.
+**A interface web estará disponível em <http://127.0.0.1:5173>.**
 
-- `/`: formulário com os oito campos em português, botão **Consultar modelo**, botão **Limpar formulário** e área de resultado com classe, probabilidade, nome e versão do modelo.
-- `/home`: apresentação do projeto e status da API, com **Verificar novamente**. Essa consulta tem timeout de cinco segundos.
+O Vite encaminha chamadas a `/api` para o backend; como as portas 5173 e 8000 são fixas, elas devem estar livres antes de iniciar os serviços.
 
-Os botões **Caso 1** a **Caso 5** preenchem o formulário com as linhas 0, 3, 8, 12 e 25 do dataset NIDDK preparado, sem identificador ou alvo. Os valores estão versionados em `frontend/src/fixtures/predictionCases.ts`, portanto o frontend não precisa acessar a pasta de dados local. São exemplos de preenchimento, não um conjunto independente de avaliação. A consulta só acontece ao clicar em **Consultar modelo**.
+Na rota `/`, o formulário reúne os oito campos em português e apresenta a classe, a probabilidade, o nome e a versão do modelo após **Consultar modelo**.
 
-Todos os campos são obrigatórios e devem respeitar o contrato numérico da API. A consulta tem timeout de 30 segundos. A interface apresenta carregamento e erros, impede envios duplicados enquanto aguarda e remove o resultado antigo ao editar os campos ou selecionar outro caso. **Limpar formulário** apaga os campos, o resultado e eventuais erros, além de cancelar uma consulta pendente. Nenhum dado é persistido no navegador.
+A rota `/home` apresenta o projeto e verifica o status da API.
+
+Os botões **Caso 1** a **Caso 5** preenchem o formulário com as linhas 0, 3, 8, 12 e 25 do NIDDK preparado.
+
+Os valores, sem identificador ou alvo, estão versionados em `frontend/src/fixtures/predictionCases.ts` portanto, o frontend não acessa a pasta de dados local. Eles são apenas exemplos de preenchimento e só geram uma consulta quando **Consultar modelo** é acionado.
+
+Todos os campos são obrigatórios e seguem o contrato numérico da API, a interface aguarda por até 30 segundos, informa carregamento e erros, impede envios duplicados e descarta resultados antigos quando os campos são alterados ou outro caso é selecionado.
+
+**Limpar formulário** também cancela uma consulta pendente, e nenhum dado é persistido no navegador.
 
 ### Verificações
 
@@ -240,30 +285,11 @@ npm run test
 npm run build
 ```
 
-### MLflow local
-
-O servidor usará o ambiente de `ml/`. Em um terminal separado, partindo da raiz:
-
-```powershell
-cd ml
-uv run --locked python -c "from pathlib import Path; Path('../outputs/mlflow').mkdir(parents=True, exist_ok=True)"
-uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///../outputs/mlflow/mlflow.db --artifacts-destination ../outputs/mlflow/artifacts
-```
-
-A interface ficará disponível em <http://127.0.0.1:5000>. O notebook 04 registra parâmetros, métricas, gráficos, metadados e versões do pipeline nesse servidor. Cada execução cria uma nova run e uma nova versão de `niddk-diabetes-xgboost`. O notebook também recarrega a versão criada e confere suas previsões. Para utilizar a versão mais recente na API, mantenha `APP_MLFLOW_MODEL_VERSION=latest` no `backend/.env` e reinicie o backend.
-
-## Datasets em avaliação
-
-- [Early Stage Diabetes Risk Prediction - UCI](https://archive.ics.uci.edu/dataset/529/early+stage+diabetes+risk+prediction+dataset)
-- [Diabetes - NIDDK](https://www.niddk.nih.gov/) — CSV distribuído pelo [MicrosoftLearning/AI-900-AIFundamentals](https://github.com/MicrosoftLearning/AI-900-AIFundamentals/blob/main/data/ml/diabetes.csv)
-
-Ambos possuem notebooks separados de download, preparação e análise exploratória. A escolha do dataset para o modelo será feita posteriormente.
-
 ## Licença
 
 O código deste projeto é disponibilizado sob a licença [MIT](LICENSE).
 
-A base de backend e frontend foi adaptada do projeto [SampleCodex](https://github.com/lnncrs/SampleCodex)
+A base de backend e frontend foi adaptada do projeto [SampleCodex](https://github.com/lnncrs/SampleCodex) que tem licença [MIT](https://opensource.org/licenses/MIT).
 
 ___
 
