@@ -34,7 +34,7 @@ uv run jupyter lab
 
 #### Preparar dados
 
-Execute o notebook [02-prepare-niddk-diabetes.ipynb](ml/notebooks/02-prepare-niddk-diabetes.ipynb) do início ao fim, **este notebook faz o download e preparação dos dados** utilizados.
+Execute o notebook [01-prepare-niddk-diabetes.ipynb](ml/notebooks/01-prepare-niddk-diabetes.ipynb) do início ao fim, **este notebook faz o download e preparação dos dados** utilizados.
 
 Abra um novo terminal na pasta do repositório, navegue até a pasta ml e inicie o servidor MLflow:
 
@@ -45,7 +45,7 @@ uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///
 
 #### Treinar & registrar o modelo
 
-Com o servidor MLflow em execução, execute o notebook [04-mlflow-niddk-diabetes.ipynb](ml/notebooks/04-mlflow-niddk-diabetes.ipynb) do início ao fim, **este notebook treina e registra uma versão do modelo**.
+Com o servidor MLflow em execução, execute o notebook [03-mlflow-niddk-diabetes.ipynb](ml/notebooks/03-mlflow-niddk-diabetes.ipynb) do início ao fim, **este notebook treina e registra uma versão do modelo**.
 
 ### 2. Configure e inicie o backend
 
@@ -130,12 +130,14 @@ uv run --locked jupyter lab
 
 O ambiente reúne ferramentas de aquisição de dados, análise, visualização, scikit-learn, XGBoost e MLflow. Execute os notebooks de preparação do início ao fim:
 
-- [Download e preparação - UCI](ml/notebooks/01-prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`.
-- [Download e preparação - NIDDK Diabetes](ml/notebooks/02-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
-- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/03-xgboost-niddk-diabetes.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
-- [XGBoost com MLflow - NIDDK Diabetes](ml/notebooks/04-mlflow-niddk-diabetes.ipynb): reproduz o experimento do 03 de forma independente, usa `mlflow.sklearn.autolog()` para registrar parâmetros, métricas de treino e o pipeline no Model Registry, mantém métricas de teste e artefatos específicos explícitos e verifica a recarga. Execute a preparação 02 e inicie o servidor MLflow antes de rodá-lo; não é necessário executar o 03.
+- [Download e preparação - NIDDK Diabetes](ml/notebooks/01-prepare-niddk-diabetes.ipynb): salva `data/niddk-diabetes/diabetes.parquet`.
+- [Classificação com XGBoost - NIDDK Diabetes](ml/notebooks/02-xgboost-niddk-diabetes.ipynb): em português brasileiro, carrega o Parquet preparado, separa `X` e `y`, cria conjuntos de treino/teste e avalia um classificador XGBoost.
+- [XGBoost com MLflow - NIDDK Diabetes](ml/notebooks/03-mlflow-niddk-diabetes.ipynb): reproduz o experimento do 02 de forma independente, usa `mlflow.sklearn.autolog()` para registrar parâmetros, métricas de treino e o pipeline no Model Registry, mantém métricas de teste e artefatos específicos explícitos e verifica a recarga. Execute a preparação 01 e inicie o servidor MLflow antes de rodá-lo; não é necessário executar o 02.
+- [XGBoost com Azure Machine Learning - NIDDK Diabetes](ml/notebooks/04-azureml-niddk-diabetes.ipynb): treina localmente e registra a execução, os artefatos, o modelo e versões dos data assets de treino/teste em um workspace Azure Machine Learning. Execute a preparação 01, copie [`ml/.env.example`](ml/.env.example) para `ml/.env`, preencha os identificadores do seu workspace e execute `az login`; não compartilhe nem versione o arquivo `.env`.
+- [Responsible AI com Azure Machine Learning - NIDDK Diabetes](ml/notebooks/05-responsible-niddk-diabetes.ipynb): usa as versões mais recentes do modelo e dos data assets publicados pelo notebook 04 para criar um dashboard com análise de erros e explicabilidade no Azure ML. Além das configurações do notebook 04, defina `AZURE_ML_COMPUTE` em `ml/.env` com o nome de um compute existente no workspace.
+- [Download e preparação - UCI (arquivado)](ml/notebooks/archive/prepare-uci-diabetes.ipynb): salva `data/uci-diabetes/diabetes.parquet`; não integra a sequência principal NIDDK.
 
-Os notebooks de preparação (01 e 02) criam sua pasta de dados, mantêm uma cópia do CSV original e registram a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. O treinamento acontece nos notebooks 03 e 04.
+Os notebooks de preparação criam sua pasta de dados, mantêm uma cópia do CSV original e registram a URL, a data do download e o hash do arquivo em `source.json`. Downloads existentes são reutilizados; `FORCE_DOWNLOAD = True` permite atualizá-los. A inspeção inclui tipos, ausências, duplicatas, estatísticas, balanceamento das classes e gráficos. A sequência NIDDK usa os notebooks 01 a 05; o notebook UCI permanece arquivado.
 
 ### Backend
 
