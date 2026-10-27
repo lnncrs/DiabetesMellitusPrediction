@@ -7,8 +7,19 @@
 Universidade Federal do ABC - Bacharelado em Ciência e Tecnologia<br />
 Interação Humano-Computador - disciplina e quadrimestre a confirmar
 
-Lenin Cristi<br />
-lenin.cristi@aluno.ufabc.edu.br
+Lenin Cristi - RA 21030114
+
+Murilo Davanso - RA 11202230695
+
+Arthur Vieira Freitas de Jesus - RA 11202321538
+
+Igor Santos Botelho - RA 11202232309
+
+Enric - RA 11202320596
+
+Thalita Kelly Ferreira da Costa - RA 11202131854
+
+Leonardo Jae Yong Noh - RA 11202230594
 
 ## Resumo
 
