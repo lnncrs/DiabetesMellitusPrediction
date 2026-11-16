@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predição de Diabetes Mellitus (demo acessível)</title>
+    <style>
+/* ===== Tokens de cor (tema Branco = padrão) ===== */
+:root {
+  --bg: #f3f5f8;
+  --panel: #ffffff;
+  --soft: #eaf1f7;
+  --ink: #14202b;
+  --muted: #3b4856;
+  --border: #6b7785;
+  --accent: #0b5c8a;
+  --accent-ink: #ffffff;
+  --alert: #a3281f;
+  --warn-bg: #fff1cf;
+  --warn-ink: #5c3b00;
+  --focus: #b35c00;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --track: 0em;
+  --word: 0em;
+  --lh: 1.6;
+  --bw: 1px;
+}
+/* Tema Escuro */
+:root[data-theme="dark"] {
+  --bg: #0f1419;
+  --panel: #19202a;
+  --soft: #232d3a;
+  --ink: #f3f6f9;
+  --muted: #cbd3dc;
+  --border: #8996a5;
+  --accent: #7cc4f5;
+  --accent-ink: #06202f;
+  --alert: #ffa49b;
+  --warn-bg: #3b2f10;
+  --warn-ink: #ffe3a0;
+  --focus: #ffcf5c;
+}
+/* Daltonismo: paleta Okabe-Ito (azul / laranja) — não depende de vermelho x verde */
+:root[data-cb="on"] { --accent: #0072b2; --alert: #a84300; --focus: #6a3d9a; }
+:root[data-cb="on"][data-theme="dark"] { --accent: #56b4e9; --alert: #f0b000; --focus: #ffffff; }
+/* Alto contraste */
+:root[data-contrast="on"] {
+  --bg: #000; --panel: #000; --soft: #000; --ink: #fff; --muted: #fff; --border: #fff;
+  --accent: #ffee00; --accent-ink: #000; --alert: #ff9a9a;
+  --warn-bg: #000; --warn-ink: #ffee00; --focus: #00e5ff; --bw: 2px;
+}
+/* Fonte para dislexia (usa fontes legíveis já instaladas) */
+:root[data-dys="on"] {
+  --font: "Atkinson Hyperlegible", "OpenDyslexic", Verdana, "Trebuchet MS", sans-serif;
+}
+/* Espaçamento maior */
+:root[data-space="on"] { --track: 0.05em; --word: 0.18em; --lh: 1.95; }
+
+/* ===== Base (tudo em rem: o zoom altera o font-size do <html>) ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 112.5%; } /* 18px de base, maior que o padrão de 16px */
+body {
+  margin: 0; min-width: 0; overflow-wrap: anywhere;
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font); line-height: var(--lh);
+  letter-spacing: var(--track); word-spacing: var(--word);
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; letter-spacing: inherit; word-spacing: inherit; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+p { margin: 0 0 0.75rem; }
+:focus-visible { outline: 0.22rem solid var(--focus); outline-offset: 0.15rem; border-radius: 0.3rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip-link { position: absolute; left: 0.5rem; top: -4rem; background: var(--accent); color: var(--accent-ink); padding: 0.6rem 1rem; z-index: 10; font-weight: 700; }
+.skip-link:focus { top: 0.5rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+.demo-banner { background: var(--warn-bg); color: var(--warn-ink); border-bottom: var(--bw) solid var(--border); font-size: 0.9rem; padding: 0.55rem 1rem; text-align: center; }
+
+/* ===== Cabeçalho + barra de acessibilidade ===== */
+.top-bar {
+  display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; justify-content: space-between;
+  padding: 1rem clamp(1rem, 4vw, 3.5rem); background: var(--panel); border-bottom: var(--bw) solid var(--border);
+}
+.brand-lockup { display: inline-flex; align-items: center; gap: 0.7rem; color: var(--ink); text-decoration: none; font-weight: 800; font-size: 1.1rem; }
+.brand-mark { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 0.55rem; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+.a11y-bar { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 0.45rem; max-width: 100%; }
+.a11y-row { display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: flex-end; align-items: center; }
+.a11y-title { font-weight: 700; font-size: 0.9rem; margin-right: 0.15rem; }
+.a11y-btn {
+  min-height: 2.75rem; padding: 0.4rem 0.8rem; cursor: pointer;
+  background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.5rem;
+  font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.a11y-btn:hover:not(:disabled) { background: var(--soft); }
+.a11y-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.a11y-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.a11y-zoom { margin: 0; font-size: 0.8rem; color: var(--muted); }
+
+/* ===== Página ===== */
+.prediction-page { max-width: 80rem; margin: 0 auto; padding: 2rem clamp(1rem, 4vw, 3.5rem) 4rem; }
+.eyebrow { color: var(--accent); font-weight: 800; text-transform: uppercase; font-size: 0.85rem; margin-bottom: 0.3rem; }
+:root[data-theme="light"]:not([data-contrast="on"]) .eyebrow { color: var(--accent); }
+.prediction-intro h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 0.7rem; }
+.prediction-intro p { color: var(--muted); max-width: 46rem; }
+.educational-note { font-weight: 700; color: var(--ink) !important; }
+
+.prediction-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; margin-top: 1.5rem; }
+@media (max-width: 62rem) { .prediction-layout { grid-template-columns: minmax(0, 1fr); } }
+.form-panel, .result-panel { background: var(--panel); border: calc(var(--bw) + 0px) solid var(--border); border-radius: 0.9rem; padding: 1.5rem; }
+.result-panel { position: sticky; top: 1rem; }
+@media (max-width: 62rem) { .result-panel { position: static; } }
+.panel-heading { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1.1rem; }
+.panel-heading h2 { font-size: 1.3rem; }
+.step-number { display: grid; place-items: center; min-width: 2.2rem; height: 2.2rem; border-radius: 0.5rem; background: var(--soft); color: var(--ink); border: var(--bw) solid var(--border); font-weight: 800; font-size: 0.9rem; }
+
+/* ===== Casos de teste ===== */
+.case-picker { background: var(--soft); border: var(--bw) solid var(--border); border-radius: 0.7rem; padding: 1rem; margin-bottom: 1.4rem; }
+.case-picker h3 { font-size: 1.05rem; margin-bottom: 0.3rem; }
+.case-picker p { color: var(--muted); font-size: 0.95rem; }
+.case-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.case-buttons button { min-height: 2.75rem; min-width: 4.5rem; padding: 0.4rem 1rem; border-radius: 0.5rem; border: calc(var(--bw) + 1px) solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; font-weight: 600; }
+.case-buttons button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* ===== Campos ===== */
+.fields { display: grid; gap: 2.6rem; }
+.field + .field { position: relative; }
+.field + .field::before { content: ""; position: absolute; left: 0; right: 0; top: -1.3rem; border-top: var(--bw) solid var(--border); opacity: 0.35; }
+.field-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+.field-head label { font-weight: 800; font-size: 1.1rem; }
+.field-question { color: var(--muted); font-size: 0.95rem; margin: 0 0 0.45rem; }
+.help-btn {
+  min-height: 2.75rem; padding: 0.35rem 1rem; border-radius: 999px; cursor: pointer; flex: none;
+  background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--accent);
+  font-weight: 800; font-size: 0.95rem; line-height: 1.2;
+}
+.help-btn:hover { background: var(--soft); }
+.help-btn[aria-expanded="true"], .help-btn[aria-expanded="true"]:hover { background: var(--accent); color: var(--accent-ink); }
+.input-row { display: flex; gap: 0.6rem; align-items: stretch; flex-wrap: wrap; }
+.input-row input {
+  flex: 1 1 9rem; min-width: 0; min-height: 3rem; padding: 0.5rem 0.8rem; font-size: 1.1rem;
+  background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.5rem;
+}
+.input-row input[aria-invalid="true"] { border-color: var(--alert); border-width: 0.2rem; }
+.unit { align-self: center; color: var(--muted); font-size: 0.95rem; font-weight: 600; min-width: 3.5rem; }
+.narrate-btn {
+  min-height: 3rem; padding: 0.4rem 0.9rem; cursor: pointer; flex: none;
+  display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem;
+  background: var(--soft); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.5rem;
+}
+.narrate-btn:hover { background: var(--panel); }
+.narrate-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.narrate-btn svg { width: 1.3rem; height: 1.3rem; flex: none; }
+.field-error { color: var(--alert); font-weight: 700; margin: 0.4rem 0 0; font-size: 0.95rem; }
+.field-error::before { content: "⚠ "; }
+
+.help-panel { margin-top: 0.7rem; padding: 1rem 1.1rem; background: var(--soft); border: var(--bw) solid var(--border); border-left: 0.35rem solid var(--accent); border-radius: 0.6rem; font-size: 0.97rem; }
+.help-panel h4 { margin: 0.2rem 0 0.15rem; font-size: 0.95rem; }
+.help-panel p { margin: 0 0 0.5rem; }
+.help-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.help-actions button, .bmi-calc button { min-height: 2.75rem; padding: 0.4rem 0.9rem; cursor: pointer; border-radius: 0.5rem; border: calc(var(--bw) + 1px) solid var(--border); background: var(--panel); color: var(--ink); font-weight: 600; }
+.bmi-calc { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: end; margin: 0.4rem 0 0.2rem; }
+.bmi-calc label { display: grid; gap: 0.2rem; font-weight: 700; font-size: 0.9rem; }
+.bmi-calc input { width: 8rem; min-height: 2.75rem; padding: 0.3rem 0.6rem; font-size: 1rem; background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.5rem; }
+
+.form-error { background: var(--warn-bg); color: var(--warn-ink); border: calc(var(--bw) + 1px) solid var(--alert); border-radius: 0.6rem; padding: 0.8rem 1rem; margin-bottom: 1rem; font-weight: 700; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.8rem; padding-top: 1.3rem; border-top: var(--bw) solid var(--border); }
+.primary-button, .secondary-button { min-height: 3.1rem; padding: 0.5rem 1.4rem; border-radius: 0.55rem; font-weight: 800; cursor: pointer; font-size: 1.05rem; }
+.primary-button { background: var(--accent); color: var(--accent-ink); border: calc(var(--bw) + 1px) solid var(--accent); }
+.primary-button:disabled { opacity: 0.6; cursor: progress; }
+.secondary-button { background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); }
+
+/* ===== Resultado ===== */
+.empty-result { text-align: center; padding: 1.5rem 0.5rem; color: var(--muted); }
+.result-symbol { font-size: 2.2rem; color: var(--accent); }
+.result-message { font-weight: 700; }
+.prediction-error { border: calc(var(--bw) + 1px) solid var(--alert); border-radius: 0.6rem; padding: 1rem; color: var(--ink); }
+.prediction-error h3 { color: var(--alert); margin-bottom: 0.3rem; }
+.result-label { color: var(--muted); margin-bottom: 0.1rem; }
+.probability { font-size: clamp(3rem, 7vw, 4.2rem); font-weight: 900; line-height: 1.1; color: var(--accent); margin: 0 0 0.4rem; }
+.meter { position: relative; height: 1.1rem; background: var(--soft); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 999px; overflow: hidden; margin: 0.3rem 0 0.2rem; }
+.meter-fill { height: 100%; background: repeating-linear-gradient(45deg, var(--accent) 0 0.5rem, transparent 0.5rem 0.65rem); border-right: 0.2rem solid var(--ink); }
+.meter-mark { position: absolute; top: 0; bottom: 0; left: 50%; width: 0.18rem; background: var(--ink); }
+.meter-scale { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.8rem; }
+.class-result { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 800; padding: 0.35rem 0.8rem; border-radius: 0.5rem; border: calc(var(--bw) + 2px) solid var(--accent); margin-bottom: 0.7rem; }
+.class-result.is-positive { border-color: var(--alert); color: var(--alert); }
+.result-caption { color: var(--muted); font-size: 0.95rem; }
+.prediction-meta { display: grid; gap: 0.35rem; margin: 1rem 0 0.8rem; padding-top: 0.9rem; border-top: var(--bw) solid var(--border); }
+.prediction-meta div { display: flex; gap: 0.8rem; }
+.prediction-meta dt { color: var(--muted); min-width: 4.5rem; }
+.prediction-meta dd { margin: 0; font-weight: 600; word-break: break-word; }
+
+/* ===== Telas pequenas: barra compacta e alinhada à esquerda ===== */
+@media (max-width: 40rem) {
+  .a11y-bar, .a11y-row { align-items: flex-start; justify-content: flex-start; width: 100%; }
+  .a11y-bar { margin-left: 0; }
+  .a11y-btn { font-size: 0.82rem; padding: 0.3rem 0.55rem; }
+  .a11y-title { width: 100%; }
+  .form-panel, .result-panel { padding: 1rem; }
+  .input-row input { flex-basis: 6rem; }
+}
+
+/* ===== Dicas (tooltips) ao passar o mouse ou focar com o teclado ===== */
+.tooltip {
+  position: fixed; z-index: 100; max-width: min(19rem, calc(100vw - 1rem));
+  background: var(--ink); color: var(--bg); border: var(--bw) solid var(--bg);
+  padding: 0.5rem 0.75rem; border-radius: 0.45rem; font-size: 0.9rem; font-weight: 600; line-height: 1.4;
+  box-shadow: 0 0.3rem 1rem rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .12s;
+}
+.tooltip.show { opacity: 1; visibility: visible; }
+
+/* ===== Setas de rolagem: uma no alto, outra embaixo da tela ===== */
+.scroll-btn {
+  position: fixed; right: 1rem; z-index: 60; min-width: 4.2rem; min-height: 3.6rem; padding: 0.3rem 0.7rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.05rem;
+  background: var(--accent); color: var(--accent-ink); border: calc(var(--bw) + 1px) solid var(--panel);
+  border-radius: 0.8rem; cursor: pointer; font-weight: 800; font-size: 1.2rem; line-height: 1.1;
+  box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,.35);
+}
+.scroll-btn[hidden] { display: none; }
+.scroll-btn .scroll-text { font-size: 0.72rem; font-weight: 700; }
+.scroll-up { top: 1rem; }
+.scroll-down { bottom: 1rem; }
+.scroll-btn:hover { filter: brightness(1.1); }
+:root[data-contrast="on"] .scroll-btn { border-color: #fff; }
+
+/* ===== Botão flutuante "Acessibilidade" + painel ===== */
+.a11y-fab {
+  position: fixed; left: 1rem; bottom: 1rem; z-index: 70; min-height: 3.6rem; padding: 0.4rem 1.1rem 0.4rem 0.8rem;
+  display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); border: calc(var(--bw) + 2px) solid var(--panel);
+  border-radius: 999px; font-weight: 800; font-size: 1rem; box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,.4);
+}
+.a11y-fab svg { width: 2rem; height: 2rem; flex: none; }
+.a11y-fab[aria-expanded="true"] { filter: brightness(0.92); }
+:root[data-contrast="on"] .a11y-fab { border-color: #fff; }
+.a11y-panel {
+  position: fixed; left: 1rem; bottom: 5.6rem; z-index: 70; width: min(30rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 7rem); overflow: auto; padding: 1rem 1.1rem 1.1rem;
+  background: var(--panel); color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.9rem;
+  box-shadow: 0 0.5rem 1.6rem rgba(0,0,0,.4);
+}
+.a11y-panel[hidden] { display: none; }
+.a11y-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.8rem; }
+.a11y-panel-head h2 { font-size: 1.15rem; }
+.a11y-panel .a11y-bar { margin: 0; align-items: stretch; gap: 0.7rem; max-width: none; }
+.a11y-panel .a11y-row { justify-content: flex-start; }
+
+/* ===== Cartão de boas-vindas (aparece na primeira visita) ===== */
+.welcome-card {
+  background: var(--soft); border: calc(var(--bw) + 2px) solid var(--accent); border-radius: 0.9rem;
+  padding: 1.3rem 1.5rem; margin-bottom: 1.8rem;
+}
+.welcome-card[hidden] { display: none; }
+.welcome-card h2 { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.welcome-card p { color: var(--muted); max-width: 46rem; }
+.welcome-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.9rem; }
+.welcome-btn, .welcome-actions .narrate-btn {
+  min-height: 3.4rem; padding: 0.5rem 1.2rem; font-size: 1.05rem; font-weight: 800; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  background: var(--panel); color: var(--ink); border: calc(var(--bw) + 2px) solid var(--accent); border-radius: 0.7rem;
+}
+.welcome-btn:hover, .welcome-actions .narrate-btn:hover { background: var(--bg); }
+.welcome-btn[aria-pressed="true"], .welcome-actions .narrate-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.welcome-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.welcome-close { border-color: var(--border); font-weight: 600; }
+@media (max-width: 40rem) {
+  .a11y-fab span { font-size: 0.95rem; }
+  .a11y-panel { left: 0.5rem; width: calc(100vw - 1rem); bottom: 5.4rem; }
+  .welcome-card { padding: 1rem; }
+}
+
+/* ===== Reflow: nada pode estourar a largura em zoom alto ===== */
+.fields { grid-template-columns: minmax(0, 1fr); }
+.field, .field-head, .input-row, .form-panel, .result-panel, .welcome-card { min-width: 0; }
+.narrate-btn, .welcome-btn, .a11y-btn, .help-btn { max-width: 100%; white-space: normal; text-align: left; }
+.narrate-btn .nt { min-width: 0; }
+.input-row input { flex: 1 1 6rem; }
+
+button { overflow-wrap: normal; word-break: normal; }
+.a11y-panel-head .a11y-btn { white-space: nowrap; flex: none; }
+
+.primary-button, .secondary-button { max-width: 100%; white-space: normal; }
+.a11y-fab { max-width: calc(100vw - 2rem); white-space: normal; text-align: left; line-height: 1.2; }
+
+.a11y-fab span { font-size: clamp(0.65rem, 4vw, 1rem); }
+.a11y-fab svg { width: clamp(1.4rem, 8vw, 2rem); height: clamp(1.4rem, 8vw, 2rem); }
+
+.probability { font-size: min(4.2rem, 17vw); }
+.a11y-fab span { font-size: min(1rem, 4vw); }
+.a11y-fab svg { width: min(2rem, 8vw); height: min(2rem, 8vw); }
+.help-panel, .help-panel * { overflow-wrap: anywhere; }
+.field-head label { overflow-wrap: anywhere; }
+
+.welcome-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; }
+.welcome-dismiss {
+  min-height: 2.75rem; padding: 0.3rem 0.9rem; cursor: pointer; flex: none; font-weight: 700;
+  background: transparent; color: var(--ink); border: calc(var(--bw) + 1px) solid var(--border); border-radius: 0.6rem;
+}
+.welcome-dismiss:hover { background: var(--panel); }
+
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#form-title">Pular para o formulário</a>
+    <a class="skip-link" href="#a11y-fab">Ir para as opções de acessibilidade</a>
+
+    <aside class="demo-banner" id="demo-banner" aria-label="Aviso de demonstração">
+      Modo demonstração: o cálculo é uma <strong>simulação simples no navegador</strong>,
+      não o modelo XGBoost real do projeto.
+    </aside>
+
+    <header class="top-bar">
+      <a class="brand-lockup" href="#" aria-label="Predição de Diabetes Mellitus">
+        <span class="brand-mark" aria-hidden="true">DM</span>
+        <span>Predição de Diabetes Mellitus</span>
+      </a>
+
+      </header>
+
+    <main class="prediction-page">
+      <section class="welcome-card" id="welcome" aria-labelledby="welcome-title" hidden>
+        <div class="welcome-head">
+          <h2 id="welcome-title">Quer deixar a tela do seu jeito?</h2>
+          <button type="button" class="welcome-dismiss" id="wc-dismiss" data-tip="Fecha este cartão e não mostra de novo neste navegador">
+            <span aria-hidden="true">✕</span> Fechar
+          </button>
+        </div>
+        <p>Você pode aumentar as letras, trocar as cores ou pedir para a página ler em voz alta. Suas escolhas ficam salvas neste navegador.</p>
+        <p>Para visualizar mais opções de forma dinâmica, acesse o botão <strong>Acessibilidade</strong>, no canto inferior esquerdo da tela: ele mostra mais opções para você.</p>
+        <div class="welcome-actions" id="welcome-actions">
+          <button type="button" class="welcome-btn" id="wc-bigger" data-tip="Aumenta o tamanho de todo o texto e dos botões">
+            <span aria-hidden="true">＋</span> Letras maiores
+          </button>
+          <button type="button" class="welcome-btn" id="wc-smaller" data-tip="Diminui o tamanho de todo o texto e dos botões">
+            <span aria-hidden="true">－</span> Letras menores
+          </button>
+          <button type="button" class="welcome-btn" id="wc-dark" data-tip="Muda para o fundo escuro">
+            <span aria-hidden="true">☾</span> Tema escuro
+          </button>
+          <button type="button" class="welcome-btn" id="wc-more" data-tip="Abre todas as opções: daltonismo, alto contraste, fonte para dislexia e mais">
+            <span aria-hidden="true">⚙</span> Mais opções
+          </button>
+          <button type="button" class="welcome-btn welcome-close" id="wc-close" data-tip="Volta tudo ao estilo original (tamanho das letras, cores e opções). O cartão continua aberto">
+            <span aria-hidden="true">↺</span> Restaurar estilo original
+          </button>
+        </div>
+      </section>
+
+      <section class="prediction-intro" aria-labelledby="prediction-title">
+        <p class="eyebrow">Projeto acadêmico · UFABC</p>
+        <h1 id="prediction-title">Predição de diabetes</h1>
+        <p>Preencha os dados ou escolha um exemplo. Nas perguntas que podem gerar dúvida há o botão <strong>Está com dúvida? Aperte aqui</strong>. Todas têm um botão para <strong>ouvir a pergunta</strong>.</p>
+        <p class="educational-note">
+          Demonstração educacional. O resultado não constitui diagnóstico médico.
+        </p>
+      </section>
+
+      <div class="prediction-layout">
+        <section class="form-panel" aria-labelledby="form-title">
+          <div class="panel-heading">
+            <span class="step-number" aria-hidden="true">01</span>
+            <h2 id="form-title" tabindex="-1">Dados para a consulta</h2>
+          </div>
+
+          <div class="case-picker" role="group" aria-labelledby="cases-title">
+            <h3 id="cases-title">Casos de teste</h3>
+            <p>Cinco registros de exemplo do dataset NIDDK. Os botões apenas preenchem os campos.</p>
+            <div class="case-buttons" id="case-buttons"></div>
+          </div>
+
+          <form id="form" novalidate>
+            <div class="form-error" id="form-error" role="alert" hidden></div>
+            <div class="fields" id="fields"></div>
+            <div class="form-actions">
+              <button type="submit" class="primary-button" id="submit" data-tip="Envia os dados e mostra o resultado ao lado">Saber a resposta agora</button>
+              <button type="reset" class="secondary-button" data-tip="Apaga todos os campos e o resultado">Limpar formulário</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="result-panel" aria-labelledby="result-title">
+          <div class="panel-heading">
+            <span class="step-number" aria-hidden="true">02</span>
+            <h2 id="result-title" tabindex="-1">Resultado da predição</h2>
+          </div>
+          <div id="result" aria-live="polite" aria-atomic="true"></div>
+        </section>
+      </div>
+    </main>
+    
+    <p class="sr-only" id="a11y-status" role="status" aria-live="polite"></p>
+    <button type="button" class="a11y-fab" id="a11y-fab" aria-expanded="false" aria-controls="a11y-panel"
+      data-tip="Abre as opções de acessibilidade: letras maiores, cores, voz e mais (atalho: Alt+A)">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7.2" r="1.2" fill="currentColor"/><path d="M6.5 10.2l5.5 1.1 5.5-1.1M12 11.3v3.2M12 14.5l-2.6 4.2M12 14.5l2.6 4.2"/></svg>
+      <span>Acessibilidade</span>
+    </button>
+    <div class="a11y-panel" id="a11y-panel" role="dialog" aria-labelledby="a11y-panel-title" hidden>
+      <div class="a11y-panel-head">
+        <h2 id="a11y-panel-title">Modelo de visualização:</h2>
+        <button type="button" class="a11y-btn" id="a11y-close" data-tip="Fecha este painel (tecla Esc)">Fechar</button>
+      </div>
+      <div class="a11y-bar" role="group" aria-label="Modelo de visualização">
+        <div class="a11y-row">
+          
+          <button type="button" class="a11y-btn" id="btn-cb" data-tip="Troca as cores por uma paleta segura para daltonismo (azul e laranja)" aria-pressed="false">
+            <span aria-hidden="true">◐</span> Daltonismo
+          </button>
+          <button type="button" class="a11y-btn" id="btn-zoom-in" data-tip="Aumenta o tamanho de todo o texto e dos botões">
+            <span aria-hidden="true">＋</span> Aumentar a tela
+          </button>
+          <button type="button" class="a11y-btn" id="btn-zoom-out" data-tip="Diminui o tamanho de todo o texto e dos botões">
+            <span aria-hidden="true">－</span> Diminuir a tela
+          </button>
+          <button type="button" class="a11y-btn" id="btn-light" data-tip="Fundo branco com texto escuro" aria-pressed="true">
+            <span aria-hidden="true">☀</span> Tema Branco
+          </button>
+          <button type="button" class="a11y-btn" id="btn-dark" data-tip="Fundo escuro com texto claro, mais confortável à noite" aria-pressed="false">
+            <span aria-hidden="true">☾</span> Tema Escuro
+          </button>
+        </div>
+        <div class="a11y-row">
+          <span class="a11y-title">Mais opções:</span>
+          <button type="button" class="a11y-btn" id="btn-contrast" data-tip="Preto e amarelo, para enxergar melhor as bordas e o texto" aria-pressed="false">
+            <span aria-hidden="true">◑</span> Alto contraste
+          </button>
+          <button type="button" class="a11y-btn" id="btn-dys" data-tip="Usa uma fonte mais fácil de ler para quem tem dislexia" aria-pressed="false">
+            <span aria-hidden="true">Aa</span> Fonte para dislexia
+          </button>
+          <button type="button" class="a11y-btn" id="btn-space" data-tip="Aumenta o espaço entre letras, palavras e linhas" aria-pressed="false">
+            <span aria-hidden="true">↔</span> Espaçamento maior
+          </button>
+          <button type="button" class="a11y-btn" id="btn-slow" data-tip="Faz a narração falar mais devagar" aria-pressed="false">
+            <span aria-hidden="true">🐢</span> Voz lenta
+          </button>
+          <button type="button" class="a11y-btn" id="btn-reset" data-tip="Volta todas as opções de visualização ao padrão">
+            <span aria-hidden="true">↺</span> Restaurar padrão
+          </button>
+        </div>
+        
+        <p class="a11y-zoom" id="zoom-label" aria-hidden="true"></p>
+      
+        <div class="a11y-row">
+          <button type="button" class="a11y-btn" id="btn-welcome" data-tip="Mostra de novo o cartão de boas-vindas no começo da página">
+            <span aria-hidden="true">👋</span> Mostrar boas-vindas
+          </button>
+        </div>
+      </div>
+    </div>
+    <nav class="scroll-nav" aria-label="Rolagem da página">
+      <button type="button" class="scroll-btn scroll-up" id="btn-up" data-tip="Sobe a página" aria-label="Subir a página" hidden>
+        <span aria-hidden="true">▲</span><span class="scroll-text">Subir</span>
+      </button>
+      <button type="button" class="scroll-btn scroll-down" id="btn-down" data-tip="Desce a página" aria-label="Descer a página">
+        <span aria-hidden="true">▼</span><span class="scroll-text">Descer</span>
+      </button>
+    </nav>
+    <script>
+// ===============================================================
+// Predição de Diabetes — demo standalone e acessível
+// Para usar a API real, defina API_URL (exige CORS liberado no backend).
+// ===============================================================
+const API_URL = null; // ex.: 'http://127.0.0.1:8000/api/predict'
+
+// ---------- Definição dos campos ----------
+// avg = média do dataset NIDDK (saída do notebook 01). range = limites plausíveis
+// usados apenas nesta demo para evitar erros de digitação (não vêm do projeto).
+const fields = [
+  {
+    name: 'idade', noHelp: true, label: 'Idade', unit: 'anos', integer: true, avg: 30, range: [0, 120], example: '35',
+    question: 'Qual é a idade da pessoa, em anos completos?',
+    how: 'Digite só o número inteiro, sem a palavra anos. Por exemplo: 35.',
+    what: 'Quantos anos a pessoa tem hoje, contando só os anos completos.',
+    where: 'Documento de identidade ou data de nascimento. Se você só sabe a data de nascimento, subtraia o ano de nascimento do ano atual e, se o aniversário ainda não passou, subtraia mais um.',
+    unknown: 'O modelo foi treinado com adultos: os exemplos do projeto começam aos 21 anos.',
+  },
+  {
+    name: 'gestacoes', label: 'Gestações', unit: 'vezes', integer: true, avg: 3, range: [0, 25], example: '2',
+    question: 'Quantas vezes a pessoa já engravidou?',
+    how: 'Digite o número inteiro. Se nunca engravidou, digite zero.',
+    what: 'O total de gestações registradas, incluindo as que não chegaram ao parto.',
+    where: 'Histórico clínico ou cartão de pré-natal. Uma gravidez de gêmeos conta como uma gestação.',
+    unknown: 'Atenção: este campo vem do dataset original, que só tinha mulheres. Para quem nunca engravidou ou não se aplica, use zero.',
+  },
+  {
+    name: 'glicose_plasmatica', label: 'Glicose plasmática', unit: 'mg/dL', integer: true, avg: 108, range: [20, 600], example: '110',
+    question: 'Qual é o valor da glicose no sangue, em miligramas por decilitro?',
+    how: 'Digite o número inteiro do exame, sem a unidade. Por exemplo: 110.',
+    what: 'A quantidade de açúcar (glicose) no plasma do sangue.',
+    where: 'Exame de sangue de glicemia, que mostra o resultado em mg/dL. No dataset Pima, em que este se baseia, a medida foi feita duas horas após um teste de tolerância à glicose.',
+    unknown: 'Sem o exame, a predição perde o sentido. Para só testar a tela, use o valor típico do dataset.',
+  },
+  {
+    name: 'pressao_arterial_diastolica', label: 'Pressão arterial diastólica', unit: 'mm Hg', integer: true, avg: 71, range: [20, 200], example: '80',
+    question: 'Qual é a pressão arterial diastólica, a pressão mínima, em milímetros de mercúrio?',
+    how: 'Digite só o segundo número da pressão. Por exemplo: se for 120 por 80, digite 80.',
+    what: 'É o número menor da pressão arterial, medido quando o coração relaxa entre os batimentos.',
+    where: 'Aparelho de pressão ou ficha de consulta. Se o aparelho mostrar 12 por 8, multiplique o 8 por dez: 80.',
+    unknown: 'Se você não mediu, procure uma farmácia ou unidade de saúde. Para só testar a tela, use o valor típico.',
+  },
+  {
+    name: 'espessura_triceps', label: 'Espessura do tríceps', unit: 'mm', integer: true, avg: 29, range: [0, 100], example: '25',
+    question: 'Qual é a espessura da dobra de pele do tríceps, em milímetros?',
+    how: 'Digite o número inteiro em milímetros. Por exemplo: 25.',
+    what: 'A espessura da dobra de pele na parte de trás do braço, que ajuda a estimar a gordura corporal.',
+    where: 'É medida por profissional de saúde com um aparelho chamado adipômetro ou plicômetro. Dificilmente se mede em casa.',
+    unknown: 'Se não tiver essa medida, peça a um profissional ou use o valor típico só para testar. O resultado ficará menos confiável.',
+  },
+  {
+    name: 'insulina_serica', label: 'Insulina sérica', unit: 'µU/mL', integer: true, avg: 139, range: [0, 1000], example: '80',
+    question: 'Qual é o valor da insulina no sangue, em microunidades por mililitro?',
+    how: 'Digite o número inteiro do exame, sem a unidade. Por exemplo: 80.',
+    what: 'A quantidade do hormônio insulina presente no sangue.',
+    where: 'Exame de sangue de insulina, pedido por médico. O resultado costuma vir em µU/mL. No dataset Pima, foi medida duas horas após o teste de glicose.',
+    unknown: 'Se você não tem o exame, não chute um valor. Para só testar a tela, use o valor típico do dataset.',
+  },
+  {
+    name: 'imc', label: 'IMC (índice de massa corporal)', unit: 'kg/m²', integer: false, avg: 31.6, range: [10, 80], example: '24,2', bmi: true,
+    question: 'Qual é o índice de massa corporal, o IMC?',
+    how: 'Digite o número, com vírgula ou ponto para as casas decimais. Por exemplo: 24,2.',
+    what: 'Um número que relaciona peso e altura. Fórmula: peso em quilos dividido pela altura em metros ao quadrado.',
+    where: 'Aparece em consultas e balanças de bioimpedância, ou você pode calcular com a calculadora logo abaixo.',
+    unknown: 'Use a calculadora: informe peso e altura e o campo é preenchido para você.',
+  },
+  {
+    name: 'indice_hereditariedade_diabetes', label: 'Índice de hereditariedade de diabetes', unit: 'índice', integer: false, avg: 0.4, range: [0, 3], example: '0,4',
+    question: 'Qual é o índice de hereditariedade de diabetes, que resume o histórico de diabetes na família?',
+    how: 'Digite o número com vírgula ou ponto. Valores comuns ficam entre 0,1 e 1,3. Por exemplo: 0,4.',
+    what: 'Um número calculado a partir de quantos parentes têm diabetes e do quão próximos são. Quanto maior, mais histórico familiar.',
+    where: 'Não existe em exames: ele foi criado pelos pesquisadores do dataset. Não é uma pergunta de sim ou não.',
+    unknown: 'Quase ninguém sabe calcular este índice. Se a pessoa tem pouco ou nenhum histórico familiar, valores baixos, perto de 0,1 a 0,3, são os mais próximos. Na dúvida, use o valor típico.',
+  },
+];
+
+const cases = [
+  { name: 'Caso 1', values: { gestacoes: 0, glicose_plasmatica: 171, pressao_arterial_diastolica: 80, espessura_triceps: 34, insulina_serica: 23, imc: 43.50972593, indice_hereditariedade_diabetes: 1.213191354, idade: 21 } },
+  { name: 'Caso 2', values: { gestacoes: 9, glicose_plasmatica: 103, pressao_arterial_diastolica: 78, espessura_triceps: 25, insulina_serica: 304, imc: 29.58219193, indice_hereditariedade_diabetes: 1.282869847, idade: 43 } },
+  { name: 'Caso 3', values: { gestacoes: 8, glicose_plasmatica: 80, pressao_arterial_diastolica: 95, espessura_triceps: 33, insulina_serica: 24, imc: 26.62492885, indice_hereditariedade_diabetes: 0.443947388, idade: 53 } },
+  { name: 'Caso 4', values: { gestacoes: 5, glicose_plasmatica: 114, pressao_arterial_diastolica: 101, espessura_triceps: 43, insulina_serica: 70, imc: 36.49531966, indice_hereditariedade_diabetes: 0.079190164, idade: 38 } },
+  { name: 'Caso 5', values: { gestacoes: 9, glicose_plasmatica: 104, pressao_arterial_diastolica: 68, espessura_triceps: 42, insulina_serica: 40, imc: 51.85540108, indice_hereditariedade_diabetes: 0.182937824, idade: 21 } },
+];
+
+const $ = (id) => document.getElementById(id);
+const root = document.documentElement;
+const fmt = (n) => String(n).replace('.', ',');
+
+// =============================================================
+// 1) Preferências de visualização (salvas no navegador)
+// =============================================================
+const ZOOMS = [100, 115, 130, 150, 175, 200];
+const defaults = { zoom: 0, theme: 'light', cb: false, contrast: false, dys: false, space: false, slow: false };
+let prefs = { ...defaults };
+try { Object.assign(prefs, JSON.parse(localStorage.getItem('dm-a11y') || '{}')); } catch (_) {}
+if (!localStorage_ok() && window.matchMedia?.('(prefers-color-scheme: dark)').matches) prefs.theme = 'dark';
+
+function localStorage_ok() { try { return localStorage.getItem('dm-a11y') !== null; } catch (_) { return false; } }
+function savePrefs() { try { localStorage.setItem('dm-a11y', JSON.stringify(prefs)); } catch (_) {} }
+function announce(msg) { $('a11y-status').textContent = ''; setTimeout(() => ($('a11y-status').textContent = msg), 30); }
+
+function applyPrefs() {
+  root.style.fontSize = `${112.5 * (ZOOMS[prefs.zoom] / 100)}%`;
+  root.dataset.theme = prefs.theme;
+  root.dataset.cb = prefs.cb ? 'on' : 'off';
+  root.dataset.contrast = prefs.contrast ? 'on' : 'off';
+  root.dataset.dys = prefs.dys ? 'on' : 'off';
+  root.dataset.space = prefs.space ? 'on' : 'off';
+  $('btn-light').setAttribute('aria-pressed', String(prefs.theme === 'light'));
+  $('btn-dark').setAttribute('aria-pressed', String(prefs.theme === 'dark'));
+  $('btn-cb').setAttribute('aria-pressed', String(prefs.cb));
+  $('btn-contrast').setAttribute('aria-pressed', String(prefs.contrast));
+  $('btn-dys').setAttribute('aria-pressed', String(prefs.dys));
+  $('btn-space').setAttribute('aria-pressed', String(prefs.space));
+  $('btn-slow').setAttribute('aria-pressed', String(prefs.slow));
+  $('btn-zoom-in').disabled = prefs.zoom >= ZOOMS.length - 1;
+  $('wc-bigger').disabled = prefs.zoom >= ZOOMS.length - 1;
+  $('wc-smaller').disabled = prefs.zoom <= 0;
+  const dark = prefs.theme === 'dark';   // o botão mostra a ação: se está escuro, oferece "Tema claro"
+  $('wc-dark').innerHTML = dark ? '<span aria-hidden="true">☀</span> Tema claro' : '<span aria-hidden="true">☾</span> Tema escuro';
+  $('wc-dark').dataset.tip = dark ? 'Volta para o fundo claro' : 'Muda para o fundo escuro';
+  $('btn-zoom-out').disabled = prefs.zoom <= 0;
+  $('btn-zoom-in').dataset.tip = `Aumenta o texto e os botões. Agora: ${ZOOMS[prefs.zoom]}%`;
+  $('btn-zoom-out').dataset.tip = `Diminui o texto e os botões. Agora: ${ZOOMS[prefs.zoom]}%`;
+  $('zoom-label').textContent = `Tamanho da tela: ${ZOOMS[prefs.zoom]}%`;
+  savePrefs();
+}
+function toggle(key, onMsg, offMsg) { prefs[key] = !prefs[key]; applyPrefs(); announce(prefs[key] ? onMsg : offMsg); }
+
+$('btn-zoom-in').addEventListener('click', () => { prefs.zoom = Math.min(prefs.zoom + 1, ZOOMS.length - 1); applyPrefs(); announce(`Tela em ${ZOOMS[prefs.zoom]} por cento`); });
+$('btn-zoom-out').addEventListener('click', () => { prefs.zoom = Math.max(prefs.zoom - 1, 0); applyPrefs(); announce(`Tela em ${ZOOMS[prefs.zoom]} por cento`); });
+$('btn-light').addEventListener('click', () => { prefs.theme = 'light'; applyPrefs(); announce('Tema branco ativado'); });
+$('btn-dark').addEventListener('click', () => { prefs.theme = 'dark'; applyPrefs(); announce('Tema escuro ativado'); });
+$('btn-cb').addEventListener('click', () => toggle('cb', 'Paleta para daltonismo ativada', 'Paleta para daltonismo desativada'));
+$('btn-contrast').addEventListener('click', () => toggle('contrast', 'Alto contraste ativado', 'Alto contraste desativado'));
+$('btn-dys').addEventListener('click', () => toggle('dys', 'Fonte para dislexia ativada', 'Fonte para dislexia desativada'));
+$('btn-space').addEventListener('click', () => toggle('space', 'Espaçamento maior ativado', 'Espaçamento maior desativado'));
+$('btn-slow').addEventListener('click', () => toggle('slow', 'Voz lenta ativada', 'Voz lenta desativada'));
+$('btn-reset').addEventListener('click', () => { prefs = { ...defaults }; applyPrefs(); announce('Visualização restaurada ao padrão'); });
+
+// =============================================================
+// 2) Narração por voz (Web Speech API, pt-BR)
+// =============================================================
+const synth = window.speechSynthesis;
+let narratingBtn = null;
+let voices = [];
+function loadVoices() { voices = synth ? synth.getVoices() : []; }
+if (synth) { loadVoices(); synth.addEventListener?.('voiceschanged', loadVoices); }
+
+const ICON_SPEAKER = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16.5 12a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/><path d="M14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+
+function stopNarration() {
+  if (synth) synth.cancel();
+  if (narratingBtn) { setNarrateBtn(narratingBtn, false); narratingBtn = null; }
+}
+function setNarrateBtn(btn, on) {
+  btn.dataset.tip = on ? 'Clique de novo para parar de ouvir' : btn.dataset.tipIdle;
+  btn.setAttribute('aria-pressed', String(on));
+  btn.querySelector('.nt').textContent = on ? 'Parar de ouvir' : btn.dataset.idle;
+  if (btn.dataset.ctx) btn.setAttribute('aria-label', `${on ? 'Parar de ouvir' : btn.dataset.idle}: ${btn.dataset.ctx}`);
+}
+function speak(text, btn) {
+  if (!synth) { announce('Seu navegador não suporta narração por voz.'); alert('Seu navegador não suporta narração por voz.'); return; }
+  const wasThis = narratingBtn === btn;
+  stopNarration();
+  if (wasThis) return; // segundo clique = parar
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'pt-BR';
+  u.rate = prefs.slow ? 0.7 : 1;
+  const v = voices.find((x) => x.lang === 'pt-BR') || voices.find((x) => x.lang?.toLowerCase().startsWith('pt'));
+  if (v) u.voice = v;
+  u.onend = u.onerror = () => { if (narratingBtn === btn) { setNarrateBtn(btn, false); narratingBtn = null; } };
+  narratingBtn = btn;
+  if (btn) setNarrateBtn(btn, true);
+  synth.speak(u);
+}
+function narrateButton(idleText, getText, tip, ctx) {
+  const b = document.createElement('button');
+  if (ctx) { b.dataset.ctx = ctx; b.setAttribute('aria-label', `${idleText}: ${ctx}`); }
+  b.dataset.tipIdle = tip; b.dataset.tip = tip;
+  b.type = 'button';
+  b.className = 'narrate-btn';
+  b.dataset.idle = idleText;
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `${ICON_SPEAKER}<span class="nt">${idleText}</span>`;
+  b.addEventListener('click', () => speak(getText(), b));
+  return b;
+}
+window.addEventListener('beforeunload', () => synth && synth.cancel());
+
+// =============================================================
+// 3) Construção do formulário
+// =============================================================
+const fieldsBox = $('fields');
+fields.forEach((f) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'field';
+  const hid = `${f.name}-help`;
+  const eid = `${f.name}-err`;
+
+  // cabeçalho: rótulo + botão "?"
+  const head = document.createElement('div');
+  head.className = 'field-head';
+  head.innerHTML = `<label for="${f.name}">${f.label}</label>`;
+  const help = document.createElement('button');
+  help.type = 'button';
+  help.className = 'help-btn';
+  help.textContent = 'Está com dúvida? Aperte aqui';
+  help.setAttribute('aria-label', `Está com dúvida? Aperte aqui. Ajuda sobre ${f.label}`);
+  help.setAttribute('aria-expanded', 'false');
+  help.dataset.tip = `Abre a ajuda: o que é ${f.label}, onde encontrar e o que fazer se não souber`;
+  help.setAttribute('aria-controls', hid);
+  if (!f.noHelp) head.appendChild(help);
+  wrap.appendChild(head);
+
+  const q = document.createElement('p');
+  q.className = 'field-question';
+  q.id = `${f.name}-q`;
+  q.textContent = `${f.question} ${f.how}`;
+  wrap.appendChild(q);
+
+  // linha: input + unidade + "Ouvir a pergunta"
+  const row = document.createElement('div');
+  row.className = 'input-row';
+  const input = document.createElement('input');
+  Object.assign(input, { id: f.name, name: f.name, type: 'number', required: true });
+  input.min = f.range[0]; input.max = f.range[1];
+  input.step = f.integer ? '1' : 'any';
+  input.inputMode = f.integer ? 'numeric' : 'decimal';
+  input.setAttribute('aria-describedby', `${f.name}-q ${eid}`);
+  input.placeholder = `ex.: ${f.example}`;
+  input.dataset.tip = `${f.label} (${f.unit}). Exemplo: ${f.example}`;
+  row.appendChild(input);
+  const unit = document.createElement('span');
+  unit.className = 'unit'; unit.textContent = f.unit;
+  row.appendChild(unit);
+  row.appendChild(narrateButton('Ouvir a pergunta', () =>
+    `${f.label}. ${f.question} ${f.how} A unidade é ${f.unit}.`,
+    'Ouve a pergunta e como preencher, em voz alta', f.label));
+  wrap.appendChild(row);
+
+  const err = document.createElement('p');
+  err.className = 'field-error'; err.id = eid; err.hidden = true;
+  wrap.appendChild(err);
+
+  // painel de ajuda
+  const panel = document.createElement('div');
+  panel.className = 'help-panel'; panel.id = hid; panel.hidden = true;
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', `Ajuda: ${f.label}`);
+  panel.innerHTML = `
+    <h4>O que é</h4><p>${f.what}</p>
+    <h4>Onde encontrar</h4><p>${f.where}</p>
+    <h4>Se você não souber</h4><p>${f.unknown}</p>
+    <p><strong>Valor típico no dataset:</strong> ${fmt(f.avg)} ${f.unit} (média). Isto não é uma recomendação médica.</p>`;
+  if (f.bmi) {
+    const calc = document.createElement('div');
+    calc.className = 'bmi-calc';
+    calc.innerHTML = `
+      <label>Peso (kg)<input id="bmi-w" type="number" min="1" step="any" inputmode="decimal" placeholder="ex.: 70" /></label>
+      <label>Altura (m)<input id="bmi-h" type="number" min="0.5" max="2.5" step="any" inputmode="decimal" placeholder="ex.: 1,70" /></label>`;
+    const cb = document.createElement('button');
+    cb.dataset.tip = 'Calcula peso ÷ altura² e preenche o campo IMC'; cb.type = 'button'; cb.textContent = 'Calcular e preencher';
+    cb.addEventListener('click', () => {
+      const w = Number(calc.querySelector('#bmi-w').value), h = Number(calc.querySelector('#bmi-h').value);
+      if (!(w > 0) || !(h > 0.5)) { announce('Informe peso em quilos e altura em metros, por exemplo 1,70.'); calc.querySelector('#bmi-h').focus(); return; }
+      input.value = (w / (h * h)).toFixed(1);
+      clearFieldError(f); onEdit();
+      announce(`IMC calculado: ${fmt(input.value)}`);
+      input.focus();
+    });
+    calc.appendChild(cb);
+    panel.appendChild(calc);
+  }
+  const actions = document.createElement('div');
+  actions.className = 'help-actions';
+  actions.appendChild(narrateButton('Ouvir esta ajuda', () =>
+    `${f.label}. O que é: ${f.what} Onde encontrar: ${f.where} Se você não souber: ${f.unknown}`,
+    'Ouve esta ajuda em voz alta', f.label));
+  const typ = document.createElement('button');
+  typ.dataset.tip = 'Preenche o campo com a média do dataset. Use só para testar a tela'; typ.type = 'button'; typ.textContent = `Usar valor típico (${fmt(f.avg)})`;
+  typ.addEventListener('click', () => { input.value = f.avg; clearFieldError(f); onEdit(); input.focus(); announce(`Valor típico ${fmt(f.avg)} preenchido`); });
+  actions.appendChild(typ);
+  panel.appendChild(actions);
+  if (!f.noHelp) wrap.appendChild(panel);
+
+  help.addEventListener('click', () => {
+    const open = panel.hidden;
+    panel.hidden = !open;
+    help.setAttribute('aria-expanded', String(open));
+  });
+  input.addEventListener('input', () => { clearFieldError(f); onEdit(); });
+  fieldsBox.appendChild(wrap);
+});
+
+// casos de teste
+cases.forEach((c) => {
+  const b = document.createElement('button');
+  b.dataset.tip = 'Preenche o formulário com um registro de exemplo do dataset'; b.type = 'button'; b.textContent = c.name; b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', () => {
+    Object.entries(c.values).forEach(([k, v]) => ($(k).value = v));
+    fields.forEach(clearFieldError);
+    $('form-error').hidden = true;
+    selectedCase = c.name; markCase(); showIdle();
+  });
+  $('case-buttons').appendChild(b);
+});
+let selectedCase = null;
+function markCase() { [...$('case-buttons').children].forEach((b) => b.setAttribute('aria-pressed', String(b.textContent === selectedCase))); }
+function onEdit() { selectedCase = null; markCase(); showIdle(); }
+$('form').addEventListener('reset', () => { fields.forEach(clearFieldError); $('form-error').hidden = true; selectedCase = null; markCase(); showIdle(); stopNarration(); });
+
+function setFieldError(f, msg) {
+  const el = $(`${f.name}-err`); el.textContent = msg; el.hidden = false;
+  $(f.name).setAttribute('aria-invalid', 'true');
+}
+function clearFieldError(f) {
+  const el = $(`${f.name}-err`); el.textContent = ''; el.hidden = true;
+  $(f.name).removeAttribute('aria-invalid');
+}
+
+// =============================================================
+// 4) Resultado
+// =============================================================
+const resultBox = $('result');
+function showIdle() {
+  resultBox.innerHTML = `
+    <div class="empty-result">
+      <span class="result-symbol" aria-hidden="true">◇</span>
+      <h3>Aguardando consulta</h3>
+      <p>O resultado aparecerá aqui após o envio do formulário.</p>
+    </div>`;
+}
+function showError(msg) {
+  resultBox.innerHTML = `<div role="alert" class="prediction-error"><h3>Consulta não concluída</h3><p></p></div>`;
+  resultBox.querySelector('p').textContent = msg;
+}
+function showResult(r) {
+  const pct = r.probability_diabetes;
+  const pctTxt = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 }).format(pct);
+  const pos = r.predicted_class === 1;
+  resultBox.innerHTML = `
+    <div class="prediction-result">
+      <p class="result-label">Probabilidade estimada para a classe 1</p>
+      <p class="probability">${pctTxt}</p>
+      <div class="meter" role="img" aria-label="Barra de probabilidade: ${pctTxt}. A marca no meio indica 50 por cento.">
+        <div class="meter-fill" style="width:${(pct * 100).toFixed(1)}%"></div><div class="meter-mark"></div>
+      </div>
+      <div class="meter-scale" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+      <p class="class-result ${pos ? 'is-positive' : ''}"><span aria-hidden="true">${pos ? '▲' : '✔'}</span>
+        Classe ${r.predicted_class} · ${pos ? 'Diabetes' : 'Sem diabetes'}</p>
+      <p class="result-caption">Classificação do modelo segundo os rótulos do dataset. A estimativa não confirma nem descarta um diagnóstico. Procure um profissional de saúde.</p>
+      <dl class="prediction-meta">
+        <div><dt>Modelo</dt><dd></dd></div>
+        <div><dt>Versão</dt><dd></dd></div>
+      </dl>
+      <div id="narrate-result"></div>
+    </div>`;
+  const dds = resultBox.querySelectorAll('dd');
+  dds[0].textContent = r.model_name; dds[1].textContent = r.model_version;
+  resultBox.querySelector('#narrate-result').appendChild(narrateButton('Ouvir o resultado', () =>
+    `Resultado da consulta. Probabilidade estimada de ${Math.round(pct * 1000) / 10} por cento. ` +
+    `O modelo classificou como ${pos ? 'diabetes' : 'sem diabetes'}. ` +
+    `Este resultado é educacional e não confirma nem descarta um diagnóstico. Procure um profissional de saúde.`,
+    'Ouve o resultado em voz alta'));
+  $('result-title').focus();
+}
+
+// ---------- Simulação local (NÃO é o modelo real) ----------
+function mockPredict(x) {
+  const z = -9.2 + 0.045 * x.glicose_plasmatica + 0.07 * x.imc + 0.03 * x.idade + 0.08 * x.gestacoes +
+    1.2 * x.indice_hereditariedade_diabetes + 0.004 * x.insulina_serica + 0.005 * x.pressao_arterial_diastolica;
+  const p = 1 / (1 + Math.exp(-z));
+  return { predicted_class: p >= 0.5 ? 1 : 0, probability_diabetes: p, model_name: 'simulacao-local (demo)', model_version: 0 };
+}
+async function predict(payload) {
+  if (!API_URL) { await new Promise((r) => setTimeout(r, 400)); return mockPredict(payload); }
+  const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  if (res.status === 503) throw new Error('O modelo está indisponível. Inicie a API e carregue o modelo.');
+  if (res.status === 422) throw new Error('Os dados não foram aceitos. Confira os campos.');
+  if (!res.ok) throw new Error('Não foi possível concluir a predição.');
+  return res.json();
+}
+
+// =============================================================
+// 5) Envio com validação por campo
+// =============================================================
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  stopNarration();
+  const payload = {}; const problems = [];
+  for (const f of fields) {
+    const raw = $(f.name).value.trim(); const v = Number(raw);
+    clearFieldError(f);
+    let msg = '';
+    if (raw === '') msg = `Preencha este campo. Exemplo: ${f.example}.`;
+    else if (!Number.isFinite(v) || v < 0) msg = 'Informe um número maior ou igual a zero.';
+    else if (f.integer && !Number.isInteger(v)) msg = 'Use um número inteiro, sem vírgula.';
+    else if (v < f.range[0] || v > f.range[1]) msg = `O valor parece fora do esperado. Use entre ${fmt(f.range[0])} e ${fmt(f.range[1])} ${f.unit}.`;
+    if (msg) { setFieldError(f, msg); problems.push(f); } else payload[f.name] = v;
+  }
+  const box = $('form-error');
+  if (problems.length) {
+    box.hidden = false;
+    box.textContent = `Corrija ${problems.length === 1 ? '1 campo' : problems.length + ' campos'} antes de continuar: ${problems.map((f) => f.label).join(', ')}.`;
+    $(problems[0].name).focus();
+    return;
+  }
+  box.hidden = true;
+  const btn = $('submit'); btn.disabled = true; btn.textContent = 'Buscando resposta…';
+  resultBox.innerHTML = '<p role="status" class="result-message">Buscando a resposta. Aguarde…</p>';
+  try { showResult(await predict(payload)); }
+  catch (err) { showError(err instanceof Error ? err.message : 'Não foi possível concluir a consulta.'); }
+  finally { btn.disabled = false; btn.textContent = 'Saber a resposta agora'; }
+});
+
+if (API_URL) $('demo-banner').remove();
+applyPrefs();
+showIdle();
+
+
+// =============================================================
+// 6) Dicas ao passar o mouse / focar (aparecem com atraso curto,
+//    somem com Esc, e o ponteiro pode entrar na dica)
+// =============================================================
+(function tooltips() {
+  const tip = document.createElement('div');
+  tip.className = 'tooltip'; tip.id = 'tooltip'; tip.setAttribute('role', 'tooltip');
+  (document.querySelector('main') || document.body).appendChild(tip);
+  let current = null, showT = 0, hideT = 0;
+
+  function place(el) {
+    const r = el.getBoundingClientRect();
+    tip.style.left = '0px'; tip.style.top = '0px';
+    const tw = tip.offsetWidth, th = tip.offsetHeight, m = 8;
+    let x = r.left + r.width / 2 - tw / 2;
+    x = Math.max(m, Math.min(x, window.innerWidth - tw - m));
+    let y = r.bottom + 8;
+    if (y + th > window.innerHeight - m) y = Math.max(m, r.top - th - 8);
+    tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+  }
+  function show(el) {
+    const text = el.dataset.tip; if (!text) return;
+    clearTimeout(hideT); current = el;
+    tip.textContent = text; place(el);
+    tip.classList.add('show'); el.setAttribute('aria-describedby', 'tooltip');
+  }
+  function hide() {
+    clearTimeout(showT); clearTimeout(hideT);
+    tip.classList.remove('show');
+    if (current) { current.removeAttribute('aria-describedby'); current = null; }
+  }
+  const target = (e) => (e.target instanceof Element ? e.target.closest('[data-tip]') : null);
+  document.addEventListener('mouseover', (e) => {
+    const el = target(e); if (!el || el === current) return;
+    clearTimeout(showT); clearTimeout(hideT);
+    if (current) show(el);                       // já havia dica aberta: troca na hora
+    else showT = setTimeout(() => show(el), 250); // senão, espera um instante
+  });
+  document.addEventListener('mouseout', (e) => {
+    const el = target(e); if (!el) return;
+    clearTimeout(showT);
+    hideT = setTimeout(hide, 150); // cancelado se o mouse entrar em outro botão ou na dica
+  });
+  tip.addEventListener('mouseenter', () => clearTimeout(hideT));
+  tip.addEventListener('mouseleave', () => (hideT = setTimeout(hide, 150)));
+  document.addEventListener('focusin', (e) => { const el = target(e); if (el) show(el); });
+  document.addEventListener('focusout', hide);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+  document.addEventListener('click', (e) => { const el = target(e); if (el && el === current) { /* mantém */ } });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+  window.hideTooltip = hide;
+})();
+
+
+// =============================================================
+// 7) Setas de rolagem (subir / descer a página)
+// =============================================================
+(function scrollArrows() {
+  const up = $('btn-up'), down = $('btn-down');
+  const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  function go(dir) {
+    window.scrollBy({ top: dir * Math.round(window.innerHeight * 0.8), behavior: reduce() ? 'auto' : 'smooth' });
+  }
+  function update() {
+    const y = window.scrollY, max = document.documentElement.scrollHeight - window.innerHeight;
+    up.hidden = y < 40;            // no topo da página não precisa de "subir"
+    down.hidden = y > max - 40;    // no fim da página não precisa de "descer"
+  }
+  up.addEventListener('click', () => go(-1));
+  down.addEventListener('click', () => go(1));
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  new ResizeObserver(update).observe(document.body);
+  update();
+})();
+
+
+// =============================================================
+// 8) Botão flutuante "Acessibilidade", painel e cartão de boas-vindas
+// =============================================================
+(function accessibilityUI() {
+  const fab = $('a11y-fab'), panel = $('a11y-panel'), welcome = $('welcome');
+
+  function openPanel() {
+    panel.hidden = false; fab.setAttribute('aria-expanded', 'true');
+    const first = panel.querySelector('.a11y-bar button:not(:disabled)') || panel.querySelector('button');
+    if (first) first.focus();
+    if (window.hideTooltip) window.hideTooltip(); // foco automático não deve abrir dica
+  }
+  function closePanel(returnFocus = true) {
+    if (panel.hidden) return;
+    panel.hidden = true; fab.setAttribute('aria-expanded', 'false');
+    if (returnFocus) fab.focus();
+  }
+  const togglePanel = () => (panel.hidden ? openPanel() : closePanel());
+
+  fab.addEventListener('click', togglePanel);
+  $('a11y-close').addEventListener('click', () => closePanel());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !panel.hidden) closePanel();
+    if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyA') { e.preventDefault(); togglePanel(); }
+  });
+  document.addEventListener('click', (e) => {   // clicar fora fecha o painel
+    if (panel.hidden) return;
+    if (!panel.contains(e.target) && !fab.contains(e.target) && !$('wc-more').contains(e.target)) closePanel(false);
+  });
+
+  // ---- cartão de boas-vindas ----
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('dm-welcome') === 'off'; } catch (_) {}
+  welcome.hidden = dismissed;
+
+  const listen = narrateButton('Ouvir esta página', () =>
+    'Predição de diabetes. Este é um projeto acadêmico da UFABC e o resultado não é um diagnóstico médico. ' +
+    'Para usar, escolha um caso de exemplo ou preencha os oito campos. Cada campo tem um botão para ouvir a pergunta. ' +
+    'Quando terminar, aperte o botão Saber a resposta agora. ' +
+    'Para mudar o tamanho das letras ou as cores, use o botão Acessibilidade, no canto inferior esquerdo da tela.',
+    'Lê em voz alta como usar esta página', 'esta página');
+  listen.classList.add('welcome-listen');
+  $('welcome-actions').insertBefore(listen, $('wc-more'));
+
+  $('wc-bigger').addEventListener('click', () => $('btn-zoom-in').click());
+  $('wc-smaller').addEventListener('click', () => $('btn-zoom-out').click());
+  $('wc-dark').addEventListener('click', () => { prefs.theme = prefs.theme === 'dark' ? 'light' : 'dark'; applyPrefs(); announce(prefs.theme === 'dark' ? 'Tema escuro ativado' : 'Tema branco ativado'); });
+  $('wc-more').addEventListener('click', () => { if (panel.hidden) openPanel(); else closePanel(); });
+  $('wc-close').addEventListener('click', () => {   // "Restaurar estilo original": desfaz tudo, mas o cartão continua aberto
+    stopNarration();
+    prefs = { ...defaults }; applyPrefs();
+    announce('Estilo original restaurado. Tamanho das letras, cores e opções voltaram ao padrão.');
+  });
+  $('wc-dismiss').addEventListener('click', () => {   // "Fechar": fecha o cartão e não mostra de novo
+    stopNarration(); welcome.hidden = true;
+    try { localStorage.setItem('dm-welcome', 'off'); } catch (_) {}
+    announce('Cartão de boas-vindas fechado. As opções continuam no botão Acessibilidade.');
+    fab.focus();
+  });
+  $('btn-welcome').addEventListener('click', () => {
+    try { localStorage.removeItem('dm-welcome'); } catch (_) {}
+    welcome.hidden = false; closePanel(false); welcome.scrollIntoView({ block: 'center' });
+    $('welcome-title').setAttribute('tabindex', '-1'); $('welcome-title').focus();
+  });
+})();
+
+</script>
+  </body>
+</html>
